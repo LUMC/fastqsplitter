@@ -59,7 +59,7 @@ def split_fastqs(input_file: Path, output_files: List[Path]):
 
     # Open all the files at once
     # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
-    with contextlib.ExitStack as stack:
+    with contextlib.ExitStack() as stack:
         input_fastq = stack.enter_context(
             gzip.open(str(input_file), mode='rb'))
         fastq_parser = SimpleFastqParser(input_fastq)
@@ -75,7 +75,9 @@ def split_fastqs(input_file: Path, output_files: List[Path]):
             file_to_write = output_handles[i % number_of_output_files]
             for j in range(100):
                 try:
-                    file_to_write.write(fastq_parser.next())
+                    lines = fastq_parser.next()
+                    for line in lines:
+                        file_to_write.write(line)
                 except StopIteration:
                     fastq_empty = True
                     break
@@ -85,7 +87,7 @@ def split_fastqs(input_file: Path, output_files: List[Path]):
 def main():
     parser = argument_parser()
     parsed_args = parser.parse_args()
-    print(parsed_args.output)
+    split_fastqs(parsed_args.input, parsed_args.output)
 
 
 if __name__ == "__main__":
