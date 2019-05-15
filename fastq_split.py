@@ -23,23 +23,19 @@ def argument_parser() -> argparse.ArgumentParser:
 def split_fastqs(input_file: Path, output_files: List[Path],
                  compression_level: int = DEFAULT_COMPRESSION_LEVEL,
                  group_size: int = 100):
-    # Open all the files at once
+    # contextlib.Exitstack allows us to open multiple files at once which
+    # are automatically closed on error.
     # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
     with contextlib.ExitStack() as stack:
         input_fastq = stack.enter_context(
             gzip.open(str(input_file), mode='rb'))  # type: gzip.GzipFile
-        output_handles = []  # type: List[gzip.GzipFile]
-        for output_file in output_files:
-            output_handles.append(
-                # Make sure each file is opend as part of the stack. So all
-                # files get closed on error.
-                stack.enter_context(
-                    gzip.open(
-                        filename=str(output_file),
-                        mode='wb',
-                        compresslevel=compression_level
-                    )
-                ))
+        output_handles = [
+                stack.enter_context(gzip.open(
+                    filename=str(output_file),
+                    mode='wb',
+                    compresslevel=compression_level
+                )) for output_file in output_files
+        ]  # type: List[gzip.GzipFile]
 
         i = 0
         number_of_output_files = len(output_handles)
@@ -53,6 +49,8 @@ def split_fastqs(input_file: Path, output_files: List[Path],
             # 4 lines.
             for j in range(group_size * 4):
                 try:
+                    # next(handle) equals handle.readline() but throws a
+                    # StopIteration error if the lines is ''.
                     file_to_write.write(next(input_fastq))
                 except StopIteration:
                     fastq_empty = True
