@@ -33,6 +33,7 @@ import xopen
 # Choose 1 as default compression level. Speed is more important than filesize
 # in this application.
 DEFAULT_COMPRESSION_LEVEL = 1
+DEFAULT_GROUP_SIZE = 100
 
 
 def argument_parser() -> argparse.ArgumentParser:
@@ -52,12 +53,20 @@ def argument_parser() -> argparse.ArgumentParser:
                         help="Only applicable when output files have a '.gz' "
                              "extension. Default={0}"
                         .format(DEFAULT_COMPRESSION_LEVEL))
+    parser.add_argument("-g", "--group-size", type=int,
+                        default=DEFAULT_GROUP_SIZE,
+                        help=argparse.SUPPRESS
+                        # help="Specify the group size. This will set how "
+                        #      "fine-grained the fastq distribution will be."
+                        #      " Default: {0}".format(DEFAULT_GROUP_SIZE)
+                        )
+
     return parser
 
 
 def split_fastqs(input_file: Path, output_files: List[Path],
                  compression_level: int = DEFAULT_COMPRESSION_LEVEL,
-                 group_size: int = 100):
+                 group_size: int = DEFAULT_GROUP_SIZE):
     # contextlib.Exitstack allows us to open multiple files at once which
     # are automatically closed on error.
     # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
