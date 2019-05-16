@@ -63,6 +63,12 @@ def argument_parser() -> argparse.ArgumentParser:
                         help="Only applicable when output files have a '.gz' "
                              "extension. Default={0}"
                         .format(DEFAULT_COMPRESSION_LEVEL))
+    parser.add_argument("-t", "--threads-per-file", type=int,
+                        default=DEFAULT_THREADS_PER_FILE,
+                        help="Set the number of compression threads per output"
+                             " file. NOTE: more threads are only useful when "
+                             "using a compression level > 1. Default: {0}"
+                             "".format(DEFAULT_THREADS_PER_FILE))
 
     # BELOW ARGUMENTS ARE FOR BENCHMARKING AND TESTING PURPOSES
     parser.add_argument("-g", "--group-size", type=int,
@@ -72,12 +78,6 @@ def argument_parser() -> argparse.ArgumentParser:
                         #      "fine-grained the fastq distribution will be."
                         #      " Default: {0}".format(DEFAULT_GROUP_SIZE)
                         )
-    parser.add_argument("-t", "--threads-per-file", type=int,
-                        default=DEFAULT_THREADS_PER_FILE,
-                        help="Set the number of compression threads per output"
-                             " file. NOTE: more threads are only useful when "
-                             "using a compression level > 1. Default: {0}"
-                             "".format(DEFAULT_THREADS_PER_FILE))
 
     return parser
 
