@@ -67,7 +67,7 @@ def argument_parser() -> argparse.ArgumentParser:
                         default=DEFAULT_THREADS_PER_FILE,
                         help="Set the number of compression threads per output"
                              " file. NOTE: more threads are only useful when "
-                             "using a compression level > 1. Default: {0}"
+                             "using a compression level > 1. Default={0}"
                              "".format(DEFAULT_THREADS_PER_FILE))
 
     # BELOW ARGUMENTS ARE FOR BENCHMARKING AND TESTING PURPOSES
