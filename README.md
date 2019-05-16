@@ -13,7 +13,7 @@ will be gzip compressed automatically. The default compression level is 1 and
 can be changed by using the `-c` flag. 
 
 Because of xopen the output files will be compressed using pigz (parallel gzip).
-The number of threads can be set with the -t flag. The default is 1. 
+The number of threads can be set with the `-t` flag. The default is 1. 
 
 ### Example
 
@@ -27,7 +27,7 @@ to `split.1.fq.gz`, read 101-200 will go to `split.2.fq.gz`, read
  etc. 
 
 This way the fastq reads are evenly distributed, with a difference of maximum
-100 reads between outputfiles.
+100 reads between output files.
 
 
 ### Comparisons
@@ -38,7 +38,9 @@ of threads per file.
 
 Fastqsplitter runs with 1 thread per output file and compression level 1 by default.
 For fair comparison with biopet-fastqsplitter, fastqsplitter was run with 4
-threads per file (xopen default) and compression level 5.
+threads per file (xopen default) and compression level 5. Since fastqsplitter
+starts several pigz and one gzip process the memory usage of these processes
+are included in the results.
 
 This test case was run with  a 2.3 GB input fastq file zipped. 
 This was split over 5 output files.
