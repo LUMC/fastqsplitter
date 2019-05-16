@@ -54,8 +54,8 @@ def split_fastqs(input_file: Path, output_files: List[Path],
 
         i = 0
         number_of_output_files = len(output_handles)
-        fastq_empty = False
-        while not fastq_empty:
+        fastq_eof_reached = False
+        while not fastq_eof_reached:
             # By using modulo we pick one file at a time and make sure all
             # files are written to equally.
             file_to_write = output_handles[i % number_of_output_files]
@@ -68,7 +68,7 @@ def split_fastqs(input_file: Path, output_files: List[Path],
                     # StopIteration error if the lines is ''.
                     file_to_write.write(next(input_fastq))
                 except StopIteration:
-                    fastq_empty = True
+                    fastq_eof_reached = True
                     break
             i += 1
 
