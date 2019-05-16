@@ -2,21 +2,36 @@
 
 import argparse
 import contextlib
-import gzip
 
 from pathlib import Path
 from typing import List
 
-DEFAULT_COMPRESSION_LEVEL = 6
+# xopen opens files as normal files, gzip files, bzip2 files or xz files
+# depending on extension.
+import xopen
+
+# Choose 1 as default compression level. Speed is more important than filesize
+# in this application.
+DEFAULT_COMPRESSION_LEVEL = 1
 
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", type=Path, required=True)
+    parser.add_argument("-i", "--input", type=Path, required=True,
+                        help="The fastq file to be scattered.")
     parser.add_argument("-o", "--output", action="append", type=Path,
-                        required=True)
+                        required=True,
+                        help="Scatter over these output files. Multiple -o "
+                             "flags can be used. The extensions determine "
+                             "which compression algorithm will be used. '.gz' "
+                             "for gzip, '.bz2' for bzip2, '.xz' for xz. Other "
+                             "extensions will use no compression."
+                        )
     parser.add_argument("-c", "--compression-level", type=int,
-                        default=DEFAULT_COMPRESSION_LEVEL)
+                        default=DEFAULT_COMPRESSION_LEVEL,
+                        help="Only applicable when output files have a '.gz' "
+                             "extension. Default={0}"
+                        .format(DEFAULT_COMPRESSION_LEVEL))
     return parser
 
 
@@ -28,14 +43,14 @@ def split_fastqs(input_file: Path, output_files: List[Path],
     # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
     with contextlib.ExitStack() as stack:
         input_fastq = stack.enter_context(
-            gzip.open(str(input_file), mode='rb'))  # type: gzip.GzipFile
+            xopen.xopen(input_file, mode='rb'))  # type: xopen.PipedGzipReader
         output_handles = [
-                stack.enter_context(gzip.open(
-                    filename=str(output_file),
-                    mode='wb',
-                    compresslevel=compression_level
-                )) for output_file in output_files
-        ]  # type: List[gzip.GzipFile]
+            stack.enter_context(xopen.xopen(
+                filename=output_file,
+                mode='wb',
+                compresslevel=compression_level
+            )) for output_file in output_files
+        ]  # type: List[xopen.PipedGzipWriter]
 
         i = 0
         number_of_output_files = len(output_handles)
