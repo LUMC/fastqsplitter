@@ -10,7 +10,10 @@ fastqsplitter uses the excellent [xopen library by @marcelm](
 https://github.com/marcelm/xopen). This determines by extension whether the 
 file is compressed. If the output files for fastqsplitter end with '.gz' they 
 will be gzip compressed automatically. The default compression level is 1 and
-can be changed by using the `-c` flag.
+can be changed by using the `-c` flag. 
+
+Because of xopen the output files will be compressed using pigz (parallel gzip).
+The number of threads can be set with the -t flag. The default is 1. 
 
 ### Example
 
@@ -27,3 +30,28 @@ This way the fastq reads are evenly distributed, with a difference of maximum
 100 reads between outputfiles.
 
 
+### Comparisons
+
+Comparing different modes of fastqsplitter and biopet-fastqsplitter. 
+Biopet-fastqsplitter has only one mode: compression level 5, and an unknown number
+of threads per file.
+
+Fastqsplitter runs with 1 thread per output file and compression level 1 by default.
+For fair comparison with biopet-fastqsplitter, fastqsplitter was run with 4
+threads per file (xopen default) and compression level 5.
+
+This test case was run with  a 2.3 GB input fastq file zipped. 
+This was split over 5 output files.
+
+The used test machine had 32 GB memory (2x16GB 2133mhz), a Intel core i7-6700
+(4 cores, 8 threads) and a Sandisk X400 500gb SSD.
+
+|                | fastqsplitter (defaults) | fastqsplitter -t 4 -c 5 |  biopet-fastqsplitter |
+| -------------  | ------------------------ | ----------------------- | --------------------- |
+|real time       | 0m57.632s                | 1m30.291s               | 1m41.385s             |
+|total cpu time  | 3m33.276s                | 8m36.600s               | 8m20.304s             |
+|max mem         | 24 MB                    | 32MB                    | 400MB                 |
+|max vmem        | 82 MB                    | 1.6 GB                  | 11.0 GB               |
+|output file size| 2290 MB                  | 2025 MB                 | 2025 MB               |
+
+The outcomes for multiple runs were fairly consistent with a max +-3 second difference between runs.
