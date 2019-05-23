@@ -47,11 +47,7 @@ setup(
     ],
     python_requires=">=3.5",  # Because we use type annotation.
     install_requires=[
-        # Temporarily use git branch.
-        # Wait until https://github.com/marcelm/xopen/pull/11 is merged and
-        # released
-        "xopen @ https://github.com/rhpvorderman/xopen/"
-        "releases/download/parallelopen/xopen-0.5.2.dev2+gd2fa806.tar.gz"
+       "xopen>=0.6.0"
     ],
     entry_points={
         "console_scripts": [
