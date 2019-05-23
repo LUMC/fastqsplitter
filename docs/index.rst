@@ -15,14 +15,14 @@ Introduction
 =============
 A simple application to split FASTQ files.
 
-The algorithm is a reimplementation from [biopet-fastqsplitter](
-https://github.com/biopet/fastqsplitter). Fastqsplitter reads a fastq
+The algorithm is a reimplementation from `biopet-fastqsplitter
+<https://github.com/biopet/fastqsplitter>`_. Fastqsplitter reads a fastq
 file. It then splits the reads over the designated output files.
 
 This application does NOT work with multiline fastq sequences.
 
-fastqsplitter uses the excellent [xopen library by @marcelm](
-https://github.com/marcelm/xopen). This determines by extension whether the
+fastqsplitter uses the excellent `xopen library by @marcelm
+<https://github.com/marcelm/xopen>`_. This determines by extension whether the
 file is compressed and allows for very fast compression and decompression of
 gzip files.
 

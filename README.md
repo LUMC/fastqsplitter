@@ -23,4 +23,5 @@ be gzip compressed.
 
 ### Documentation
 
-More information on fastqsplitter can be found [on our readthedocs page]().
+More information on fastqsplitter can be found [on our readthedocs page](
+https://fastqsplitter.readthedocs.io/).
