@@ -36,6 +36,13 @@ Usage
     :func: argument_parser
     :prog: fastqsplitter
 
+
+.. NOTE::
+
+   Fastqsplitter uses a separate process for reading the input file, doing the
+   splitting as well as one seperate process per output file. Fastqsplitter
+   therefore always uses multiple CPU cores.
+
 =======
 Example
 =======
