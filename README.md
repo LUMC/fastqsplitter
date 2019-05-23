@@ -50,10 +50,10 @@ The used test machine had 32 GB memory (2x16GB 2133mhz), a Intel core i7-6700
 
 |                       | fastqsplitter (defaults) | fastqsplitter -t 4 -c 5 |  biopet-fastqsplitter |
 | --------------------  | ------------------------ | ----------------------- | --------------------- |
-|real time              | 0m57.632s                | 1m30.291s               | 1m41.385s             |
-|total cpu time         | 3m33.276s                | 8m36.600s               | 8m20.304s             |
+|real time              | 0m50.932s                | 1m28.153s               | 1m41.385s             |
+|total cpu time         | 3m7.116s                 | 7m55.436s               | 8m20.304s             |
 |max mem                | 24 MB                    | 32MB                    | 400MB                 |
-|max vmem               | 82 MB                    | 1.6 GB                  | 11.0 GB               |
+|max vmem               | 110 MB                   | 1.6 GB                  | 11.0 GB               |
 |output files total size| 2290 MB                  | 2025 MB                 | 2025 MB               |
 
 The outcomes for multiple runs were fairly consistent with a max +-3 second difference between runs.
