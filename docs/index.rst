@@ -90,3 +90,4 @@ output files total size   2290 MB                    2025 MB                   2
 
 The outcomes for multiple runs were fairly consistent with a max +-3 second difference between runs.
 
+.. include:: CHANGELOG.rst
