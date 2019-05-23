@@ -1,3 +1,6 @@
+[![](https://travis-ci.org/LUMC/fastqsplitter.svg?branch=develop)](
+https://travis-ci.org/LUMC/fastqsplitter)
+
 # fastqsplitter
 
 A simple application to split FASTQ files.
