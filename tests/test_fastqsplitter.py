@@ -19,12 +19,13 @@
 # SOFTWARE.
 
 import gzip
+import sys
 import tempfile
 from pathlib import Path
 
 from Bio.SeqIO.QualityIO import FastqPhredIterator
 
-from fastqsplitter import split_fastqs
+from fastqsplitter import main, split_fastqs
 
 import pytest
 
@@ -77,3 +78,16 @@ def test_split_fastqs(number_of_splits: int):
     for number in records_per_file:
         assert number >= expected_records_per_file
         assert number <= (expected_records_per_file + 100)
+
+
+def test_main():
+    number_of_splits = 3
+    output_files = [Path(str(tempfile.mkstemp(suffix=".fq.gz")[1]))
+                    for _ in range(number_of_splits)]
+    args=["fastqsplitter", "-i", str(TEST_FILE), "-c", "5", "-t", "2"]
+    for output_file in output_files:
+        args.append("-o")
+        args.append(str(output_file))
+    sys.argv = args[:]
+    main()
+    [validate_fastq_gz(output_file) for output_file in output_files]
