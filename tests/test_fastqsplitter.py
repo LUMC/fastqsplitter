@@ -34,21 +34,25 @@ TEST_FILE_INVALID = Path(__file__).parent / Path("data") / Path(
     "test_invalid.fq.gz")
 
 
-def validate_fastq_gz(fastq: Path):
-    """Biopython parses fastq files and returns qualities."""
-    with gzip.open(fastq, 'rt') as fastq_handle:
+def validate_fastq_gz(fastq: Path) -> int:
+    """This function uses the biopython parser to validate a fastq file
+    and outputs the number of fastqrecords."""
+
+    number_of_records = 0
+    with gzip.open(str(fastq), 'rt') as fastq_handle:
         fastq_iterator = FastqPhredIterator(fastq_handle)
         while True:
             try:
                 # Parse each record.
                 _ = next(fastq_iterator)
+                number_of_records += 1
             except StopIteration:
                 break
+    return number_of_records
 
 
-# Some sanity checking for the test function
-def test_test_file():
-    validate_fastq_gz(TEST_FILE)
+# This also makes sure we have a valid test file.
+RECORDS_IN_TEST_FILE = validate_fastq_gz(TEST_FILE)
 
 
 def test_invalid_test_file():
@@ -64,5 +68,12 @@ def test_split_fastqs(number_of_splits: int):
     print(output_files)
 
     split_fastqs(TEST_FILE, output_files)
-    for output_file in output_files:
-        validate_fastq_gz(output_file)
+    # 100 because that is the default group size.
+    expected_records_per_file = (RECORDS_IN_TEST_FILE //
+                                 (number_of_splits * 100)) * 100
+    records_per_file = [validate_fastq_gz(output_file) for
+                        output_file in output_files]
+    # Check if fastq files are evenly distributed.
+    for number in records_per_file:
+        assert number >= expected_records_per_file
+        assert number <= (expected_records_per_file + 100)
