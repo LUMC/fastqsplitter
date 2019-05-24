@@ -20,7 +20,7 @@
 
 from setuptools import find_packages, setup
 
-with open("README.md", "r") as readme_file:
+with open("README.rst", "r") as readme_file:
     LONG_DESCRIPTION = readme_file.read()
 
 setup(
@@ -30,7 +30,7 @@ setup(
     author="Leiden University Medical Center",
     author_email="sasc@lumc.nl",  # A placeholder for now
     long_description=LONG_DESCRIPTION,
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/x-rst",
     license="MIT",
     keywords="fastq split",
     zip_safe=False,
