@@ -20,7 +20,7 @@
 
 from setuptools import find_packages, setup
 
-with open("README.md", "r") as readme_file:
+with open("README.rst", "r") as readme_file:
     LONG_DESCRIPTION = readme_file.read()
 
 setup(
@@ -30,7 +30,7 @@ setup(
     author="Leiden University Medical Center",
     author_email="sasc@lumc.nl",  # A placeholder for now
     long_description=LONG_DESCRIPTION,
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/x-rst",
     license="MIT",
     keywords="fastq split",
     zip_safe=False,
@@ -47,11 +47,7 @@ setup(
     ],
     python_requires=">=3.5",  # Because we use type annotation.
     install_requires=[
-        # Temporarily use git branch.
-        # Wait until https://github.com/marcelm/xopen/pull/11 is merged and
-        # released
-        "xopen @ https://github.com/rhpvorderman/xopen/"
-        "releases/download/parallelopen/xopen-0.5.2.dev2+gd2fa806.tar.gz"
+       "xopen>=0.6.0"
     ],
     entry_points={
         "console_scripts": [
