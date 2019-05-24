@@ -45,7 +45,7 @@ To split an input file ``input_fastq.gz`` into 3 different files.
 -o split.1.fq.gz -o split.2.fq.gz -o split.3.fq.gz``
 
 fastqsplitter uses the excellent `xopen library by @marcelm
-<https://github.com/marcelm/xopen>`_. Therefore the input and output files
+<https://github.com/marcelm/xopen>`_. Therefore, the input and output files
 compression is determined by the extension. Use ``.gz`` if output files should
 be gzip compressed. 
 

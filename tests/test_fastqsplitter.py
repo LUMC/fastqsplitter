@@ -42,13 +42,8 @@ def validate_fastq_gz(fastq: Path) -> int:
     number_of_records = 0
     with gzip.open(str(fastq), 'rt') as fastq_handle:
         fastq_iterator = FastqPhredIterator(fastq_handle)
-        while True:
-            try:
-                # Parse each record.
-                _ = next(fastq_iterator)
-                number_of_records += 1
-            except StopIteration:
-                break
+        for _ in fastq_iterator:
+            number_of_records += 1
     return number_of_records
 
 
