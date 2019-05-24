@@ -29,7 +29,7 @@ metadata = DistributionMetadata(path=str(metadata_file))
 # -- Project information -----------------------------------------------------
 
 project = metadata.name
-copyright = '2018, Leiden University Medical Center'
+copyright = '2019, Leiden University Medical Center'
 author = metadata.author
 
 # The short X.Y version
