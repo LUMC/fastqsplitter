@@ -71,5 +71,5 @@ def split_fastqs(input_file: Path, output_files: List[Path],
         for i, line in enumerate(input_fastq):
             if i % groupsize == 0:
                 group_no += 1
-                file_to_write = output_handles[group_no % number_of_output_files]
-            file_to_write.write(line)
+                write_to_output = output_handles[group_no % number_of_output_files].write
+            write_to_output(line)
