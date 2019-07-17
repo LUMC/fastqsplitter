@@ -21,29 +21,9 @@
 # SOFTWARE.
 
 import argparse
-import contextlib
 from pathlib import Path
-from typing import List
 
-# xopen opens files as normal files, gzip files, bzip2 files or xz files
-# depending on extension.
-import xopen
-
-# Choose 1 as default compression level. Speed is more important than filesize
-# in this application.
-DEFAULT_COMPRESSION_LEVEL = 1
-# There is no noticable difference in CPU time between 100 and 1000 group size.
-DEFAULT_GROUP_SIZE = 100
-# With one thread per file (pigz -p 1) pigz uses way less virtual memory
-# (10 vs 300 MB for 4 threads) and total CPU time is also decreased.
-# Example: 2.3 gb input file file. Five output files.
-# TT=Total cpu time. RT=realtime
-# Compression level 1: threads=1 RT=58s TT=3m33, threads=4 RT=57s TT=3m45
-# Compression level 5: threads=1 RT=1m48 TT=7m53, threads=4 RT=1m23, TT=8m39
-# But this is on a 8 thread machine. When using less threads RT will go towards
-# TT. Default compression is 1. So default threads 1 makes the most sense.
-DEFAULT_THREADS_PER_FILE = 1
-
+from .split import split_fastqs, DEFAULT_COMPRESSION_LEVEL, DEFAULT_GROUP_SIZE, DEFAULT_THREADS_PER_FILE
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
@@ -79,47 +59,6 @@ def argument_parser() -> argparse.ArgumentParser:
                         )
 
     return parser
-
-
-def split_fastqs(input_file: Path, output_files: List[Path],
-                 compression_level: int = DEFAULT_COMPRESSION_LEVEL,
-                 group_size: int = DEFAULT_GROUP_SIZE,
-                 threads_per_file: int = DEFAULT_THREADS_PER_FILE):
-    # contextlib.Exitstack allows us to open multiple files at once which
-    # are automatically closed on error.
-    # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
-    with contextlib.ExitStack() as stack:
-        input_fastq = stack.enter_context(
-            xopen.xopen(input_file, mode='rb'))  # type: xopen.PipedGzipReader
-        output_handles = [
-            stack.enter_context(xopen.xopen(
-                filename=output_file,
-                mode='wb',
-                compresslevel=compression_level,
-                threads=threads_per_file
-            )) for output_file in output_files
-        ]  # type: List[xopen.PipedGzipWriter]
-
-        i = 0
-        number_of_output_files = len(output_handles)
-        fastq_eof_reached = False
-        fastq_iterator = iter(input_fastq)
-        while not fastq_eof_reached:
-            # By using modulo we pick one file at a time and make sure all
-            # files are written to equally.
-            file_to_write = output_handles[i % number_of_output_files]
-
-            # Make sure a multiple of 4 lines is written as each record is
-            # 4 lines.
-            for j in range(group_size * 4):
-                try:
-                    # next(handle) equals handle.readline() but throws a
-                    # StopIteration error if the lines is ''.
-                    file_to_write.write(next(fastq_iterator))
-                except StopIteration:
-                    fastq_eof_reached = True
-                    break
-            i += 1
 
 
 def main():
