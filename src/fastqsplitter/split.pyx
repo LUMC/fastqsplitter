@@ -49,7 +49,7 @@ def split_fastqs(input_file: Path, output_files: List[Path],
                  group_size: int = DEFAULT_GROUP_SIZE,
                  threads_per_file: int = DEFAULT_THREADS_PER_FILE):
     cdef bytes line
-    cdef int groupsize = group_size
+    cdef int groupsize = group_size * 4  # 4 lines per fastq record
     cdef int i
     cdef int group_no = -1
     cdef int number_of_output_files = len(output_files)
