@@ -29,10 +29,10 @@ def filesplitter(input_handle: io.BufferedReader,
                  output_handles: List[io.BufferedWriter],
                  lines_per_block = 100):
     cdef bytes line
-    cdef int blocksize = lines_per_block
-    cdef int i = 0
-    cdef int group_no = 0
-    cdef int number_of_output_files = len(output_handles)
+    cdef unsigned int blocksize = lines_per_block
+    cdef unsigned int i = 0
+    cdef unsigned int group_no = 0
+    cdef unsigned int number_of_output_files = len(output_handles)
     if number_of_output_files < 1:
         raise ValueError("The number of outputfiles should be at least 1.")
 
