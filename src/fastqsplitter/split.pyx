@@ -28,13 +28,14 @@ def filesplitter(input_handle: io.BufferedReader,
                  lines_per_block = 100):
     cdef bytes line
     cdef int blocksize = lines_per_block
-    cdef int i
+    cdef int i = 0
     cdef int group_no = -1
     cdef int number_of_output_files = len(output_handles)
 
-    for i, line in enumerate(input_handle):
+    for line in input_handle:
         if i % blocksize == 0:
             group_no += 1
             write_to_output = output_handles[
                 group_no % number_of_output_files].write
         write_to_output(line)
+        i += 1
