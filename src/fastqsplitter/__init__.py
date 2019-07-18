@@ -21,9 +21,32 @@
 # SOFTWARE.
 
 import argparse
+import contextlib
+import io
 from pathlib import Path
+from typing import List
 
-from .split import split_fastqs, DEFAULT_COMPRESSION_LEVEL, DEFAULT_GROUP_SIZE, DEFAULT_THREADS_PER_FILE
+# xopen opens files as normal files, gzip files, bzip2 files or xz files
+# depending on extension.
+import xopen
+
+from .split import filesplitter
+
+# Choose 1 as default compression level. Speed is more important than filesize
+# in this application.
+DEFAULT_COMPRESSION_LEVEL = 1
+# There is no noticable difference in CPU time between 100 and 1000 group size.
+DEFAULT_GROUP_SIZE = 100
+# With one thread per file (pigz -p 1) pigz uses way less virtual memory
+# (10 vs 300 MB for 4 threads) and total CPU time is also decreased.
+# Example: 2.3 gb input file file. Five output files.
+# TT=Total cpu time. RT=realtime
+# Compression level 1: threads=1 RT=58s TT=3m33, threads=4 RT=57s TT=3m45
+# Compression level 5: threads=1 RT=1m48 TT=7m53, threads=4 RT=1m23, TT=8m39
+# But this is on a 8 thread machine. When using less threads RT will go towards
+# TT. Default compression is 1. So default threads 1 makes the most sense.
+DEFAULT_THREADS_PER_FILE = 1
+
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
@@ -59,6 +82,31 @@ def argument_parser() -> argparse.ArgumentParser:
                         )
 
     return parser
+
+
+def split_fastqs(input_file: Path, output_files: List[Path],
+                 compression_level: int = DEFAULT_COMPRESSION_LEVEL,
+                 group_size: int = DEFAULT_GROUP_SIZE,
+                 threads_per_file: int = DEFAULT_THREADS_PER_FILE):
+    # contextlib.Exitstack allows us to open multiple files at once which
+    # are automatically closed on error.
+    # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
+    with contextlib.ExitStack() as stack:
+        input_fastq = stack.enter_context(
+            xopen.xopen(input_file, mode='rb'))  # type: io.BufferedReader
+        output_handles = [
+            stack.enter_context(xopen.xopen(
+                filename=output_file,
+                mode='wb',
+                compresslevel=compression_level,
+                threads=threads_per_file
+            )) for output_file in output_files
+        ]  # type: List[io.BufferedWriter]
+
+        filesplitter(input_handle=input_fastq,
+                     output_handles=output_handles,
+                     lines_per_block=group_size * 4  # 4 lines per fastq record
+                     )
 
 
 def main():
