@@ -20,6 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# cython: language_level=3, cdivision=True
+
 import io
 from typing import List
 
@@ -31,6 +33,8 @@ def filesplitter(input_handle: io.BufferedReader,
     cdef int i = 0
     cdef int group_no = -1
     cdef int number_of_output_files = len(output_handles)
+    if number_of_output_files < 1:
+        raise ValueError("The number of outputfiles should be at least 1.")
 
     for line in input_handle:
         if i % blocksize == 0:

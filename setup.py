@@ -19,19 +19,6 @@
 # SOFTWARE.
 
 from setuptools import Extension, find_packages, setup
-from Cython.Build import cythonize
-
-
-def extensions():
-    return cythonize(
-        "src/fastqsplitter/split.pyx",
-        annotate=True,
-        compiler_directives=dict(
-            language_level=3,
-            cdivision=True,
-        )
-)
-
 
 with open("README.rst", "r") as readme_file:
     LONG_DESCRIPTION = readme_file.read()
@@ -68,5 +55,7 @@ setup(
             'fastqsplitter=fastqsplitter:main'
         ]
     },
-    ext_modules=extensions()
+    ext_modules= [Extension("fastqsplitter.split",
+                  ["src/fastqsplitter/split.pyx"])
+    ]
 )
