@@ -28,7 +28,7 @@ from typing import List
 def filesplitter(input_handle: io.BufferedReader,
                  output_handles: List[io.BufferedWriter],
                  lines_per_block = 100):
-    cdef bytes line
+    # cdef bytes line  # Faster to not type.
     cdef unsigned int blocksize = lines_per_block
     cdef unsigned int i = 0
     cdef unsigned int group_no = 0
