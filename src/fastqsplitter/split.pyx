@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# cython: language_level=3, cdivision=True
+# cython: language_level=3
 
 import io
 from typing import List
@@ -38,8 +38,7 @@ def filesplitter(input_handle: io.BufferedReader,
 
     for line in input_handle:
         if i == 0:
-            write_to_output = output_handles[
-                group_no].write
+            write_to_output = output_handles[group_no].write
             group_no += 1
             if group_no == number_of_output_files:
                 group_no = 0
