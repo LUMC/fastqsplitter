@@ -36,14 +36,27 @@ def filesplitter(input_handle: io.BufferedReader,
     if number_of_output_files < 1:
         raise ValueError("The number of outputfiles should be at least 1.")
 
+    # for line in handle is the fastest way to read lines in python that I
+    # know of. Implementations with next(handle) or handle.readline are
+    # slower.
     for line in input_handle:
         if i == 0:
             # Alias write to output function. This gives a massive speedup.
             write_to_output = output_handles[group_no].write
             group_no += 1
-            if group_no == number_of_output_files:
+            if group_no == number_of_output_files:  # See below for why not modulo.
                 group_no = 0
         write_to_output(line)
         i += 1
         if i == blocksize:
             i = 0
+
+        # This works, if blocksize == 100. Then i will be [0, 1, 2, .., 98, 99]
+        # which is exactly 100 numbers.
+
+        # The resetting of i at blocksize accomplishes two things:
+        # 1. i will never be larger than blocksize. We do not have to keep
+        # counting to infinity, which will lead to an integer overflow.
+        # 2. We do not have to use modulo (i % blocksize) == 0 to determine
+        # whether the blocksize is reached. Direct comparison is faster than
+        # modulo.
