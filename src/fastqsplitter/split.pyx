@@ -45,7 +45,7 @@ def filesplitter(input_handle: io.BufferedReader,
         i += 1
         if i == blocksize:
             output_handles[group_no].write(b"".join(block))
-            block = []
+            block = []  # reset block.
             group_no += 1
             if group_no == number_of_output_files:  # See below for why not modulo.
                 group_no = 0
