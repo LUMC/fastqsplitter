@@ -37,9 +37,13 @@ def filesplitter(input_handle: io.BufferedReader,
         raise ValueError("The number of outputfiles should be at least 1.")
 
     for line in input_handle:
-        if i % blocksize == 0:
+        if i == 0:
             write_to_output = output_handles[
-                group_no % number_of_output_files].write
+                group_no].write
             group_no += 1
+            if group_no == number_of_output_files:
+                group_no = 0
         write_to_output(line)
         i += 1
+        if i == blocksize:
+            i = 0
