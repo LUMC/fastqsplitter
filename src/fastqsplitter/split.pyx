@@ -38,6 +38,7 @@ def filesplitter(input_handle: io.BufferedReader,
 
     for line in input_handle:
         if i == 0:
+            # Alias write to output function. This gives a massive speedup.
             write_to_output = output_handles[group_no].write
             group_no += 1
             if group_no == number_of_output_files:
