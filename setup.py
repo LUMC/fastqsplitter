@@ -55,7 +55,7 @@ setup(
             'fastqsplitter=fastqsplitter:main'
         ]
     },
-    ext_modules= [Extension("fastqsplitter.split",
-                  ["src/fastqsplitter/split.pyx"])
+    ext_modules=[
+        Extension("fastqsplitter.split", ["src/fastqsplitter/split.pyx"])
     ]
 )
