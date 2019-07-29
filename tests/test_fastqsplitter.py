@@ -62,7 +62,6 @@ def test_split_fastqs(number_of_splits: int):
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq.gz")[1]))
                     for _ in range(number_of_splits)]
     print(output_files)
-
     split_fastqs(TEST_FILE, output_files)
     # 100 because that is the default group size.
     expected_records_per_file = (RECORDS_IN_TEST_FILE //
@@ -70,10 +69,12 @@ def test_split_fastqs(number_of_splits: int):
     records_per_file = [validate_fastq_gz(output_file) for
                         output_file in output_files]
     # Check if fastq files are evenly distributed.
+    total_lines = 0
     for number in records_per_file:
         assert number >= expected_records_per_file
         assert number <= (expected_records_per_file + 100)
-
+        total_lines += number
+    assert total_lines == RECORDS_IN_TEST_FILE
 
 def test_main():
     number_of_splits = 3
