@@ -29,6 +29,7 @@ def filesplitter(input_handle: io.BufferedReader,
                  output_handles: List[io.BufferedWriter],
                  lines_per_block = 100):
     # cdef bytes line  # Faster to not type.
+    block = []
     cdef unsigned int blocksize = lines_per_block
     cdef unsigned int i = 0
     cdef unsigned int group_no = 0
@@ -40,15 +41,14 @@ def filesplitter(input_handle: io.BufferedReader,
     # know of. Implementations with next(handle) or handle.readline are
     # slower.
     for line in input_handle:
-        if i == 0:
-            # Alias write to output function. This gives a massive speedup.
-            write_to_output = output_handles[group_no].write
+        block.append(line)
+        i += 1
+        if i == blocksize:
+            output_handles[group_no].write(b"".join(block))
+            block = []
             group_no += 1
             if group_no == number_of_output_files:  # See below for why not modulo.
                 group_no = 0
-        write_to_output(line)
-        i += 1
-        if i == blocksize:
             i = 0
 
         # This works, if blocksize == 100. Then i will be [0, 1, 2, .., 98, 99]
