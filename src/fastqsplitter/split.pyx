@@ -28,16 +28,18 @@ from typing import List
 def filesplitter(input_handle: io.BufferedReader,
                  output_handles: List[io.BufferedWriter],
                  lines_per_block = 100):
+    # Make sure inputs are sensible.
+    if len(output_handles) < 1:
+        raise ValueError("The number of output files should be at least 1.")
+    if lines_per_block < 1:
+        raise ValueError("The number of lines per block should be  at least 1.")
+
     # cdef bytes line  # Faster to not type.
     block = []
     cdef unsigned int blocksize = lines_per_block
     cdef unsigned int i = 0
     cdef unsigned int group_no = 0
     cdef unsigned int number_of_output_files = len(output_handles)
-    if number_of_output_files < 1:
-        raise ValueError("The number of output files should be at least 1.")
-    if blocksize < 1:
-        raise ValueError("The number of lines per block should be  at least 1.")
 
     # for line in handle is the fastest way to read lines in python that I
     # know of. Implementations with next(handle) or handle.readline are
