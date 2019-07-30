@@ -35,7 +35,9 @@ def filesplitter(input_handle: io.BufferedReader,
     cdef unsigned int group_no = 0
     cdef unsigned int number_of_output_files = len(output_handles)
     if number_of_output_files < 1:
-        raise ValueError("The number of outputfiles should be at least 1.")
+        raise ValueError("The number of output files should be at least 1.")
+    if blocksize < 1:
+        raise ValueError("The number of lines per block should be  at least 1.")
 
     # for line in handle is the fastest way to read lines in python that I
     # know of. Implementations with next(handle) or handle.readline are
