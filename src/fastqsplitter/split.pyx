@@ -22,17 +22,19 @@
 
 # cython: language_level=3
 
+
 import io
 from typing import List
 
+
 def filesplitter(input_handle: io.BufferedReader,
                  output_handles: List[io.BufferedWriter],
-                 lines_per_block = 100):
+                 lines_per_block=100):
     # Make sure inputs are sensible.
     if len(output_handles) < 1:
         raise ValueError("The number of output files should be at least 1.")
     if lines_per_block < 1:
-        raise ValueError("The number of lines per block should be  at least 1.")
+        raise ValueError("The number of lines per block should be at least 1.")
 
     # cdef bytes line  # Faster to not type.
     block = []
@@ -51,7 +53,7 @@ def filesplitter(input_handle: io.BufferedReader,
             output_handles[group_no].write(b"".join(block))
             block = []  # reset block.
             group_no += 1
-            if group_no == number_of_output_files:  # See below for why not modulo.
+            if group_no == number_of_output_files:  # See below for rationale.
                 group_no = 0
             i = 0
         # This works, if blocksize == 100. Then i will be [0, 1, 2, .., 98, 99]
