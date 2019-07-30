@@ -76,6 +76,7 @@ def test_split_fastqs(number_of_splits: int):
         total_lines += number
     assert total_lines == RECORDS_IN_TEST_FILE
 
+
 def test_main():
     number_of_splits = 3
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq.gz")[1]))
