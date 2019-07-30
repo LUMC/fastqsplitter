@@ -116,7 +116,8 @@ def main():
     split_fastqs(parsed_args.input,
                  parsed_args.output,
                  compression_level=parsed_args.compression_level,
-                 threads_per_file=parsed_args.threads_per_file
+                 threads_per_file=parsed_args.threads_per_file,
+                 group_size=parsed_args.group_size
                  )
 
 
