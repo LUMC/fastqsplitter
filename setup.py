@@ -18,14 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from setuptools import find_packages, setup
+from setuptools import Extension, find_packages, setup
 
 with open("README.rst", "r") as readme_file:
     LONG_DESCRIPTION = readme_file.read()
 
 setup(
     name="fastqsplitter",
-    version="1.0.0",
+    version="1.1.0",
     description="Splits FASTQ files evenly.",
     author="Leiden University Medical Center",
     author_email="sasc@lumc.nl",  # A placeholder for now
@@ -46,6 +46,7 @@ setup(
         "License :: OSI Approved :: MIT License"
     ],
     python_requires=">=3.5",  # Because we use type annotation.
+    setup_requires=["cython"],
     install_requires=[
        "xopen>=0.6.0"
     ],
@@ -53,5 +54,8 @@ setup(
         "console_scripts": [
             'fastqsplitter=fastqsplitter:main'
         ]
-    }
+    },
+    ext_modules=[
+        Extension("fastqsplitter.split", ["src/fastqsplitter/split.pyx"])
+    ]
 )

@@ -22,12 +22,15 @@
 
 import argparse
 import contextlib
+import io
 from pathlib import Path
 from typing import List
 
 # xopen opens files as normal files, gzip files, bzip2 files or xz files
 # depending on extension.
 import xopen
+
+from .split import filesplitter
 
 # Choose 1 as default compression level. Speed is more important than filesize
 # in this application.
@@ -90,7 +93,7 @@ def split_fastqs(input_file: Path, output_files: List[Path],
     # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
     with contextlib.ExitStack() as stack:
         input_fastq = stack.enter_context(
-            xopen.xopen(input_file, mode='rb'))  # type: xopen.PipedGzipReader
+            xopen.xopen(input_file, mode='rb'))  # type: io.BufferedReader
         output_handles = [
             stack.enter_context(xopen.xopen(
                 filename=output_file,
@@ -98,28 +101,12 @@ def split_fastqs(input_file: Path, output_files: List[Path],
                 compresslevel=compression_level,
                 threads=threads_per_file
             )) for output_file in output_files
-        ]  # type: List[xopen.PipedGzipWriter]
+        ]  # type: List[io.BufferedWriter]
 
-        i = 0
-        number_of_output_files = len(output_handles)
-        fastq_eof_reached = False
-        fastq_iterator = iter(input_fastq)
-        while not fastq_eof_reached:
-            # By using modulo we pick one file at a time and make sure all
-            # files are written to equally.
-            file_to_write = output_handles[i % number_of_output_files]
-
-            # Make sure a multiple of 4 lines is written as each record is
-            # 4 lines.
-            for j in range(group_size * 4):
-                try:
-                    # next(handle) equals handle.readline() but throws a
-                    # StopIteration error if the lines is ''.
-                    file_to_write.write(next(fastq_iterator))
-                except StopIteration:
-                    fastq_eof_reached = True
-                    break
-            i += 1
+        filesplitter(input_handle=input_fastq,
+                     output_handles=output_handles,
+                     lines_per_block=group_size * 4  # 4 lines per fastq record
+                     )
 
 
 def main():
@@ -129,7 +116,8 @@ def main():
     split_fastqs(parsed_args.input,
                  parsed_args.output,
                  compression_level=parsed_args.compression_level,
-                 threads_per_file=parsed_args.threads_per_file
+                 threads_per_file=parsed_args.threads_per_file,
+                 group_size=parsed_args.group_size
                  )
 
 
