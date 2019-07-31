@@ -64,7 +64,7 @@ def filesplitter(input_handle: io.BufferedReader,
     output_handles[group_no].write(b"".join(block))
 
     # The resetting of i at blocksize accomplishes two things:
-    # 1. i will never be larger than blocksize. We do not have to keep
+    # 1. It will never be larger than blocksize. We do not have to keep
     # counting to infinity, which will lead to an integer overflow.
     # 2. We do not have to use modulo (i % blocksize) == 0 to determine
     # whether the blocksize is reached. Direct comparison is faster than
