@@ -59,7 +59,8 @@ def filesplitter(input_handle: io.BufferedReader,
         # This works, if blocksize == 100. Then i will be [0, 1, 2, .., 98, 99]
         # which is exactly 100 numbers.
 
-    # Write remainder to file.
+    # Write remainder to file. Since stuff is only written at i == blocksize
+    # there is a remainder that needs to be written.
     output_handles[group_no].write(b"".join(block))
 
     # The resetting of i at blocksize accomplishes two things:
