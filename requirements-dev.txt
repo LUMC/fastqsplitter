@@ -1,0 +1,9 @@
+-r requirements.txt
+-r requirements-docs.txt
+tox
+pytest
+biopython
+flake8
+flake8-import-order
+mypy
+
