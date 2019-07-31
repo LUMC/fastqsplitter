@@ -25,7 +25,7 @@ with open("README.rst", "r") as readme_file:
 
 setup(
     name="fastqsplitter",
-    version="1.1.0-dev",
+    version="1.1.0",
     description="Splits FASTQ files evenly.",
     author="Leiden University Medical Center",
     author_email="sasc@lumc.nl",  # A placeholder for now

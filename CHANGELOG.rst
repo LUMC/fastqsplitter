@@ -7,7 +7,7 @@ Changelog
 .. NOTE: This document is user facing. Please word the changes in such a way
 .. that users understand how the changes affect the new version.
 
-1.1.0-dev
+1.1.0
 -----------------
 + Cythonize the splitting algorithm. This reduces the overhead of the application
   up to 50% over the fastest native python implementation. Overhead is all the
