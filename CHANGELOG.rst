@@ -9,6 +9,9 @@ Changelog
 
 1.1.0
 -----------------
++ Enable the building of wheels for the project now that Cython extensions
+  are used. Thanks to @marcelm  for providing a working build script on
+  https://github.com/marcelm/dnaio.
 + Cythonize the splitting algorithm. This reduces the overhead of the application
   up to 50% over the fastest native python implementation. Overhead is all the
   allocated cpu time that is not system time.

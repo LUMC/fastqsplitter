@@ -9,6 +9,7 @@ Release checklist
 - [ ] Create a test pypi package from the master branch. ([Instructions.](
 https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives
 ))
+    - [ ] Use `build-wheels.sh` to build the compiled C wheels.
 - [ ] Install the packages from the test pypi repository to see if they work.
 - [ ] Created an annotated tag with the stable version number. Include changes 
 from CHANGELOG.rst.
