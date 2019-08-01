@@ -43,5 +43,6 @@ for whl in wheelhouse/fastqsplitter-*.whl; do
 done
 
 # Created files are owned by root, so fix permissions.
-chown -R --reference=/io/setup.py repaired/
+mkdir -p /io/dist
+chown -R --reference=/io/setup.py repaired/ /io/dist
 mv repaired/*.whl /io/dist/
