@@ -50,7 +50,7 @@ setup(
     python_requires=">=3.5",  # Because we use type annotation.
     setup_requires=["cython"],
     install_requires=[
-       "xopen>=0.6.0"
+       "xopen>=0.8.1"
     ],
     entry_points={
         "console_scripts": [
