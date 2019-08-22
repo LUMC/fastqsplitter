@@ -7,6 +7,14 @@ Changelog
 .. NOTE: This document is user facing. Please word the changes in such a way
 .. that users understand how the changes affect the new version.
 
+1.2.0-dev
+-----------------
++ Updated the documentation to reflect changes in speed because of the upstream
+  improvements and the cythonizing of the algorithm in 1.1.0.
++ Upstream contributions to `xopen <https://github.com/marcelm/xopen>`_ have
+  made the reading of gzipped fastq files significantly faster. Newer
+  versions of xopen are now added as a requirement.
+
 1.1.0
 -----------------
 + Enable the building of wheels for the project now that Cython extensions

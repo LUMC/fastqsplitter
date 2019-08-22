@@ -76,18 +76,26 @@ This test case was run with  a 2.3 GB input fastq file zipped.
 This was split over 5 output files.
 
 The used test machine had 32 GB memory (2x16GB 2133mhz), an Intel core i7-6700
-(4 cores, 8 threads) and a Sandisk X400 500gb SSD.
+(4 cores, 8 threads) and a Sandisk X400 500gb SSD. Operating system: Debian 10.
+
+The following table shows the average over 10 runs.
+
++ real time = wall clock time
++ user time = total cpu seconds spent by the application (useful to see the resource usage of multithreading)
++ sys time = total cpu seconds spent by the kernel (for IO and other sys calls)
 
 ======================== ========================== ========================= =======================
 measurement              fastqsplitter (defaults)   fastqsplitter -t 4 -c 5    biopet-fastqsplitter
 ======================== ========================== ========================= =======================
-real time                 0m50.932s                  1m28.153s                 1m41.385s             
-total cpu time            3m7.116s                   7m55.436s                 8m20.304s             
-max mem                   24 MB                      32MB                      400MB                 
-max vmem                  110 MB                     1.6 GB                    11.0 GB               
+real time                 44.423s                    77.778s                   102.300s
+user time                 159.089s                   459.051s                  509.594s
+sys time                  9.437s                     11.078s                   8.411s
+max mem                   24 MB                      42 MB                     665 MB
+max vmem                  207 MB                     2.0 GB                    11.0 GB
 output files total size   2290 MB                    2025 MB                   2025 MB               
 ======================== ========================== ========================= =======================
 
-The outcomes for multiple runs were fairly consistent with a max +-3 second difference between runs.
+
+The outcomes for the runs were fairly consistent with a +-3 second real time (wall clock) difference between runs.
 
 .. include:: CHANGELOG.rst
