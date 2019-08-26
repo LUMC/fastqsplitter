@@ -18,7 +18,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import warnings
+from distutils.errors import CompileError
+
 from setuptools import Extension, find_packages, setup
+from setuptools.command.build_ext import build_ext
+
+
+class BuildExtCheckCompiler(build_ext):
+    def build_extensions(self):
+        try:
+            super().build_extensions()
+        except CompileError:  # Happens when C compiler not present
+            warnings.warn("Compilation of cython failed. "
+                          "Use pure python fallback")
+            pass
+
 
 with open("README.rst", "r") as readme_file:
     LONG_DESCRIPTION = readme_file.read()
@@ -57,6 +72,7 @@ setup(
             'fastqsplitter=fastqsplitter:main'
         ]
     },
+    cmdclass={'build_ext': BuildExtCheckCompiler},
     ext_modules=[
         Extension("fastqsplitter.split_cy", ["src/fastqsplitter/split_cy.pyx"])
     ]
