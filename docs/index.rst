@@ -16,15 +16,30 @@ Introduction
 A simple application to split FASTQ files.
 
 The algorithm is a reimplementation from `biopet-fastqsplitter
-<https://github.com/biopet/fastqsplitter>`_. Fastqsplitter reads a fastq
-file. It then splits the reads over the designated output files.
+<https://github.com/biopet/fastqsplitter>`_. Fastqsplitter splits a fastq file
+over the specified output files evenly.
+Fastqsplitter will read groups of a 100 fastq files.
+For example if 3 output files are specified record 1-100 will go to file 1,
+101-200 to file 2, 201-300 to file 3 , 301-400 to file 1 again etc.
+This ensures the output fastq files are of equal size with no positional bias
+in the output files.
 
-This application does NOT work with multiline fastq sequences.
+Fastqsplitter is fast because it assumes each record is 4 lines. As a
+consequence this application does NOT work with multiline fastq sequences.
+Also input fastq records are NOT checked for being proper fastq records.
+Since all downstream analysis tools (FastQC, cutadapt, BWA etc.) do check
+if the input is correct, another input check in fastqsplitter was deemed
+redundant.
 
 fastqsplitter uses the excellent `xopen library by @marcelm
 <https://github.com/marcelm/xopen>`_. This determines by extension whether the
 file is compressed and allows for very fast compression and decompression of
 gzip files.
+
+Fastqsplitter has cythonized the files splitting algorithm which provides a
+2x speedup over the pure python implementation. In case the cython extension
+cannot be build or downloaded during the installation a python fallback
+implementation is available.
 
 
 =============
