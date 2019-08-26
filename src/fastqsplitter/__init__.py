@@ -33,7 +33,7 @@ import xopen
 # Import from cython with python fallback
 try:
     from .split_cy import filesplitter
-except:
+except ImportError:
     from .split_py import filesplitter
 
 # Choose 1 as default compression level. Speed is more important than filesize
