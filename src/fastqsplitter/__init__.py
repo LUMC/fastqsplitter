@@ -33,8 +33,10 @@ import xopen
 # Import from cython with python fallback
 try:
     from .split_cy import filesplitter
+    USE_PYTHON_FALLBACK = False
 except ImportError:
     from .split_py import filesplitter
+    USE_PYTHON_FALLBACK = True
 
 # Choose 1 as default compression level. Speed is more important than filesize
 # in this application.
@@ -54,6 +56,14 @@ DEFAULT_THREADS_PER_FILE = 1
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
+    if USE_PYTHON_FALLBACK:
+        parser.description = ("NOTE: fastqsplitter is using the python "
+                              "fallback for the splitting algorithm. This is "
+                              "slower than the cython-optimized "
+                              "splitting algorithm. This is probably due to "
+                              "your system not having a c compiler installed "
+                              "or no pre-built binaries being available for "
+                              "your system.")
     parser.add_argument("-i", "--input", type=Path, required=True,
                         help="The fastq file to be scattered.")
     parser.add_argument("-o", "--output", action="append", type=Path,
