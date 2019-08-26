@@ -58,6 +58,6 @@ setup(
         ]
     },
     ext_modules=[
-        Extension("fastqsplitter.split", ["src/fastqsplitter/split.pyx"])
+        Extension("fastqsplitter.split_cy", ["src/fastqsplitter/split_cy.pyx"])
     ]
 )
