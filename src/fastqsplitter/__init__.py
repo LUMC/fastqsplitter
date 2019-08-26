@@ -30,7 +30,11 @@ from typing import List
 # depending on extension.
 import xopen
 
-from .split_cy import filesplitter
+# Import from cython with python fallback
+try:
+    from .split_cy import filesplitter
+except:
+    from .split_py import filesplitter
 
 # Choose 1 as default compression level. Speed is more important than filesize
 # in this application.
