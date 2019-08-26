@@ -30,7 +30,7 @@ class BuildExtCheckCompiler(build_ext):
         try:
             super().build_extensions()
         except CompileError:  # Happens when C compiler not present
-            warnings.warn("Compilation of cython failed. "
+            warnings.warn("Compilation of cython extensions failed. "
                           "Use pure python fallback")
             pass
 
