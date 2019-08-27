@@ -49,6 +49,9 @@ Quickstart
 install fastqsplitter:
 ``pip install fastqsplitter``
 
+If installation does not work because no C compiler is installed on your system
+try: ``NO_CYTHON=true pip install fastqsplitter``
+
 To split an input file ``input_fastq.gz`` into 3 different files.
 ``fastqsplitter -i input_fastq.gz
 -o split.1.fq.gz -o split.2.fq.gz -o split.3.fq.gz``
