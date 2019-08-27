@@ -25,7 +25,7 @@ from setuptools import Extension, find_packages, setup
 with open("README.rst", "r") as readme_file:
     LONG_DESCRIPTION = readme_file.read()
 
-NO_CYTHON=bool(os.environ.get("NO_CYTHON"))
+NO_CYTHON = bool(os.environ.get("NO_CYTHON"))
 
 
 def modules():
@@ -33,8 +33,9 @@ def modules():
         return []
     else:
         return [
-        Extension("fastqsplitter.split_cy", ["src/fastqsplitter/split_cy.pyx"])
-    ]
+            Extension("fastqsplitter.split_cy",
+                      ["src/fastqsplitter/split_cy.pyx"])
+        ]
 
 
 setup(
@@ -50,6 +51,8 @@ setup(
     zip_safe=False,
     packages=find_packages('src'),
     package_dir={'': 'src'},
+    # This makes sure source is included in the binary distribution
+    package_data={'fastqsplitter': ['*.pyx']},
     url="https://github.com/LUMC/fastqsplitter",
     classifiers=[
         "Programming Language :: Python :: 3 :: Only",
