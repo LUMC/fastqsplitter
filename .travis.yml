@@ -11,6 +11,7 @@ matrix:
     # Use default python3 version here.
     - env: TOX_ENV=py3-docs
     - env: TOX_ENV=py3-lint
+    - env: TOX_ENV=py3-nocy
 
     # UNIT TESTS
     # On most recent versions of python.
