@@ -90,23 +90,26 @@ def argument_parser() -> argparse.ArgumentParser:
                         )
 
     cython_not_available_text = (
-        "WARNING: the cython version of the splitting algorithm was not "
-        "compiled "
-        "for your system. This is probably due to your system not having a c "
-        "compiler installed or no pre-built binaries being available for your "
-        "system. Using fastqsplitter in cython mode will fail.")
+        " WARNING: the cython version of the splitting algorithm was not "
+        "compiled for your system. This is probably due to your system not "
+        "having a C compiler installed or no pre-built binaries being "
+        "available for your system. Using fastqsplitter in cython mode will "
+        "fail.")
+    cython_help = ("Use the cython version of the file splitting algorithm." +
+                   (" (default)" if CYTHON_AVAILABLE else
+                    cython_not_available_text))
+    python_help = ("Use the python version of the file splitting algorithm." +
+                   ("" if CYTHON_AVAILABLE else " (default)"))
     cython_group = parser.add_mutually_exclusive_group()
     cython_group.set_defaults(use_cython=CYTHON_AVAILABLE)
-    cython_group.add_argument("--cython", action="store_true",
+    cython_group.add_argument("--cython",
+                              action="store_true",
                               dest="use_cython",
-                              help="Use the cython version of the file "
-                                   "splitting algorithm." + " (default)" if
-                              CYTHON_AVAILABLE else cython_not_available_text)
-    cython_group.add_argument("--python", action="store_false",
+                              help=cython_help)
+    cython_group.add_argument("--python",
+                              action="store_false",
                               dest="use_cython",
-                              help="Use the python version of the file "
-                                   "splitting algorithm." + "" if
-                              CYTHON_AVAILABLE else " (default)")
+                              help=python_help)
     return parser
 
 
