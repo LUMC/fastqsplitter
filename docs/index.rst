@@ -37,9 +37,10 @@ file is compressed and allows for very fast compression and decompression of
 gzip files.
 
 Fastqsplitter has cythonized the files splitting algorithm which provides a
-2x speedup over the pure python implementation. In case the cython extension
-cannot be build or downloaded during the installation a python fallback
-implementation is available.
+speedup over the pure python implementation, especially when splitting to and
+from uncompressed fastq files. A python fallback is always available and
+fastqsplitter will default to it when the cython extension
+cannot be build or downloaded during the installation.
 
 
 =============
