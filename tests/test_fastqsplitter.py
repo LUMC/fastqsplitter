@@ -57,12 +57,14 @@ def test_invalid_test_file():
     error.match("Lengths of sequence and quality values differs")
 
 
-@pytest.mark.parametrize("number_of_splits", range(1, 6))
-def test_split_fastqs(number_of_splits: int):
+@pytest.mark.parametrize("use_cython,number_of_splits",
+                         [(True, i) for i in range(1, 6)] +
+                         [(False, i) for i in range(1, 6)])
+def test_split_fastqs(use_cython, number_of_splits: int):
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq.gz")[1]))
                     for _ in range(number_of_splits)]
     print(output_files)
-    split_fastqs(TEST_FILE, output_files)
+    split_fastqs(TEST_FILE, output_files, use_cython=use_cython)
     # 100 because that is the default group size.
     expected_records_per_file = (RECORDS_IN_TEST_FILE //
                                  (number_of_splits * 100)) * 100
