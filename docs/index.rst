@@ -100,6 +100,7 @@ The following table shows the average over 10 runs.
 + real time = wall clock time
 + user time = total cpu seconds spent by the application (useful to see the resource usage of multithreading)
 + sys time = total cpu seconds spent by the kernel (for IO and other sys calls)
+
 ======================== ========================== ========================== ========================= =======================
 measurement              fastqsplitter (defaults)   fastqsplitter (python)     fastqsplitter -t 4 -c 5    biopet-fastqsplitter
 ======================== ========================== ========================== ========================= =======================
@@ -114,7 +115,21 @@ output files total size   2290 MB                    2290 MB                   2
 The outcomes for the runs were fairly consistent with a +-3 second real time (wall clock) difference between runs.
 
 Uncompressed
-++++++++++++
+-------------
 
+When splitting a 6.3 Gb uncompressed fastq file into 3 files which are written
+to /dev/null to eliminate I/O limitations the cython algorithm generates less
+overhead than the python algorithm.
+
+However in most cases files will be split from compressed to compressed files
+making the difference much smaller (see table above.)
+
+======================== ========================== ==========================
+measurement              fastqsplitter (cython)     fastqsplitter (python)
+======================== ========================== ==========================
+real time                 6.045s                    10.345s
+user time                 4.907s                    9.200s
+sys time                  1.137s                    1.145s
+======================== ========================== ==========================
 
 .. include:: CHANGELOG.rst
