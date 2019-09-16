@@ -77,11 +77,13 @@ def test_split_fastqs(number_of_splits: int):
     assert total_lines == RECORDS_IN_TEST_FILE
 
 
-def test_main():
+@pytest.mark.parametrize("mode", ["--cython", "--python"])
+def test_main(mode):
     number_of_splits = 3
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq.gz")[1]))
                     for _ in range(number_of_splits)]
     args = ["fastqsplitter", "-i", str(TEST_FILE), "-c", "5", "-t", "2"]
+    args.append(mode)
     for output_file in output_files:
         args.append("-o")
         args.append(str(output_file))
