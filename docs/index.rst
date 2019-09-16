@@ -83,6 +83,7 @@ Biopet-fastqsplitter has only one mode: compression level 5, and an unknown numb
 of threads per file.
 
 Fastqsplitter runs with 1 thread per output file and compression level 1 by default.
+A comparison between default cython mode and python mode is in the table.
 For fair comparison with biopet-fastqsplitter, fastqsplitter was run with 4
 threads per file (xopen default) and compression level 5. Since fastqsplitter
 starts several pigz and one gzip process the memory usage of these processes
@@ -99,16 +100,15 @@ The following table shows the average over 10 runs.
 + real time = wall clock time
 + user time = total cpu seconds spent by the application (useful to see the resource usage of multithreading)
 + sys time = total cpu seconds spent by the kernel (for IO and other sys calls)
-
-======================== ========================== ========================= =======================
-measurement              fastqsplitter (defaults)   fastqsplitter -t 4 -c 5    biopet-fastqsplitter
-======================== ========================== ========================= =======================
-real time                 44.423s                    77.778s                   102.300s
-user time                 159.089s                   459.051s                  509.594s
-sys time                  9.437s                     11.078s                   8.411s
-max mem                   24 MB                      42 MB                     665 MB
-max vmem                  207 MB                     2.0 GB                    11.0 GB
-output files total size   2290 MB                    2025 MB                   2025 MB               
+======================== ========================== ========================== ========================= =======================
+measurement              fastqsplitter (defaults)   fastqsplitter (python)     fastqsplitter -t 4 -c 5    biopet-fastqsplitter
+======================== ========================== ========================== ========================= =======================
+real time                 44.787s                    45.702s                   77.778s                   102.300s
+user time                 162.272s                   169.238s                  459.051s                  509.594s
+sys time                  9.825s                     9.825s                    11.078s                   8.411s
+max mem                   24 MB                      24 MB                     42 MB                     665 MB
+max vmem                  207 MB                     207 MB                    2.0 GB                    11.0 GB
+output files total size   2290 MB                    2290 MB                   2025 MB                   2025 MB
 ======================== ========================== ========================= =======================
 
 
