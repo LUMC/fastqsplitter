@@ -18,10 +18,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import os
+
 from setuptools import Extension, find_packages, setup
 
 with open("README.rst", "r") as readme_file:
     LONG_DESCRIPTION = readme_file.read()
+
+NO_CYTHON = bool(os.environ.get("NO_CYTHON"))
+
+
+def modules():
+    if NO_CYTHON:
+        return []
+    else:
+        return [
+            Extension("fastqsplitter.split_cy",
+                      ["src/fastqsplitter/split_cy.pyx"])
+        ]
+
 
 setup(
     name="fastqsplitter",
@@ -36,6 +51,8 @@ setup(
     zip_safe=False,
     packages=find_packages('src'),
     package_dir={'': 'src'},
+    # This makes sure source is included in the binary distribution
+    package_data={'fastqsplitter': ['*.pyx']},
     url="https://github.com/LUMC/fastqsplitter",
     classifiers=[
         "Programming Language :: Python :: 3 :: Only",
@@ -48,7 +65,7 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
     python_requires=">=3.5",  # Because we use type annotation.
-    setup_requires=["cython"],
+    setup_requires=[] if NO_CYTHON else ["cython"],
     install_requires=[
        "xopen>=0.8.1"
     ],
@@ -57,7 +74,5 @@ setup(
             'fastqsplitter=fastqsplitter:main'
         ]
     },
-    ext_modules=[
-        Extension("fastqsplitter.split", ["src/fastqsplitter/split.pyx"])
-    ]
+    ext_modules=modules()
 )

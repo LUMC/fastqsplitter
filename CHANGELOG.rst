@@ -9,6 +9,7 @@ Changelog
 
 1.2.0-dev
 -----------------
++ Enable pure python fallback so package can be installed on all systems.
 + Updated the documentation to reflect changes in speed because of the upstream
   improvements and the cythonizing of the algorithm in 1.1.0.
 + Upstream contributions to `xopen <https://github.com/marcelm/xopen>`_ have
