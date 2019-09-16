@@ -109,9 +109,12 @@ sys time                  9.825s                     9.825s                    1
 max mem                   24 MB                      24 MB                     42 MB                     665 MB
 max vmem                  207 MB                     207 MB                    2.0 GB                    11.0 GB
 output files total size   2290 MB                    2290 MB                   2025 MB                   2025 MB
-======================== ========================== ========================= =======================
-
+======================== ========================== ========================== ========================= =======================
 
 The outcomes for the runs were fairly consistent with a +-3 second real time (wall clock) difference between runs.
+
+Uncompressed
+++++++++++++
+
 
 .. include:: CHANGELOG.rst
