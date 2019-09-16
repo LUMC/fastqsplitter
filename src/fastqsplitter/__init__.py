@@ -30,13 +30,15 @@ from typing import List
 # depending on extension.
 import xopen
 
-# Import from cython with python fallback
+# Import from cython if available
 try:
-    from .split_cy import filesplitter
-    USE_PYTHON_FALLBACK = False
-except ImportError:
-    from .split_py import filesplitter
-    USE_PYTHON_FALLBACK = True
+    from .split_cy import filesplitter as cy_splitter
+    CYTHON_AVAILABLE = True
+except ImportError as e:
+    CYTHON_IMPORT_ERROR = e
+    CYTHON_AVAILABLE = False
+
+from .split_py import filesplitter as py_splitter
 
 # Choose 1 as default compression level. Speed is more important than filesize
 # in this application.
@@ -56,14 +58,6 @@ DEFAULT_THREADS_PER_FILE = 1
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    if USE_PYTHON_FALLBACK:
-        parser.description = ("NOTE: fastqsplitter is using the python "
-                              "fallback for the splitting algorithm. This is "
-                              "slower than the cython-optimized "
-                              "splitting algorithm. This is probably due to "
-                              "your system not having a c compiler installed "
-                              "or no pre-built binaries being available for "
-                              "your system.")
     parser.add_argument("-i", "--input", type=Path, required=True,
                         help="The fastq file to be scattered.")
     parser.add_argument("-o", "--output", action="append", type=Path,
@@ -95,13 +89,32 @@ def argument_parser() -> argparse.ArgumentParser:
                         #      " Default: {0}".format(DEFAULT_GROUP_SIZE)
                         )
 
+    cython_not_available_text = (
+        "WARNING: the cython version of the splitting algorithm was not "
+        "compiled "
+        "for your system. This is probably due to your system not having a c "
+        "compiler installed or no pre-built binaries being available for your "
+        "system. Using fastqsplitter in cython mode will fail.")
+    cython_group = parser.add_mutually_exclusive_group()
+    cython_group.set_defaults(use_cython=CYTHON_AVAILABLE)
+    cython_group.add_argument("--cython", action="store_true",
+                              dest="use_cython",
+                              help="Use the cython version of the file "
+                                   "splitting algorithm." + " (default)" if
+                              CYTHON_AVAILABLE else cython_not_available_text)
+    cython_group.add_argument("--python", action="store_false",
+                              dest="use_cython",
+                              help="Use the python version of the file "
+                                   "splitting algorithm." + "" if
+                              CYTHON_AVAILABLE else " (default)")
     return parser
 
 
 def split_fastqs(input_file: Path, output_files: List[Path],
                  compression_level: int = DEFAULT_COMPRESSION_LEVEL,
                  group_size: int = DEFAULT_GROUP_SIZE,
-                 threads_per_file: int = DEFAULT_THREADS_PER_FILE):
+                 threads_per_file: int = DEFAULT_THREADS_PER_FILE,
+                 use_cython: bool = CYTHON_AVAILABLE):
     # contextlib.Exitstack allows us to open multiple files at once which
     # are automatically closed on error.
     # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
@@ -116,11 +129,21 @@ def split_fastqs(input_file: Path, output_files: List[Path],
                 threads=threads_per_file
             )) for output_file in output_files
         ]  # type: List[io.BufferedWriter]
-
-        filesplitter(input_handle=input_fastq,
-                     output_handles=output_handles,
-                     lines_per_block=group_size * 4  # 4 lines per fastq record
-                     )
+        if use_cython:
+            if CYTHON_AVAILABLE:
+                cy_splitter(input_handle=input_fastq,
+                            output_handles=output_handles,
+                            lines_per_block=group_size * 4
+                            # 4 lines per fastq record
+                            )
+            else:
+                raise CYTHON_IMPORT_ERROR
+        else:  # Use python fallback
+            py_splitter(input_handle=input_fastq,
+                        output_handles=output_handles,
+                        lines_per_block=group_size * 4
+                        # 4 lines per fastq record
+                        )
 
 
 def main():
@@ -131,8 +154,8 @@ def main():
                  parsed_args.output,
                  compression_level=parsed_args.compression_level,
                  threads_per_file=parsed_args.threads_per_file,
-                 group_size=parsed_args.group_size
-                 )
+                 group_size=parsed_args.group_size,
+                 use_cython=parsed_args.use_cython)
 
 
 if __name__ == "__main__":
