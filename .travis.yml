@@ -9,9 +9,9 @@ matrix:
   include:
     # TEST DOCS AND LINTING
     # Use default python3 version here.
-    - env: TOX_ENV=py3-docs
-    - env: TOX_ENV=py3-lint
-    - env: TOX_ENV=py3-nocy
+    - env: TOX_ENV=docs
+    - env: TOX_ENV=lint
+    - env: TOX_ENV=nocy
 
     # UNIT TESTS
     # On most recent versions of python.
