@@ -5,7 +5,7 @@
   :alt:
 
 .. image:: https://img.shields.io/conda/v/bioconda/fastqsplitter.svg
-  :target: http://bioconda.github.io/recipes/biopet-fastqsplitter/README.html
+  :target: http://bioconda.github.io/recipes/fastqsplitter/README.html
   :alt:
 
 .. image:: https://img.shields.io/pypi/pyversions/fastqsplitter.svg
