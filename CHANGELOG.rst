@@ -7,7 +7,7 @@ Changelog
 .. NOTE: This document is user facing. Please word the changes in such a way
 .. that users understand how the changes affect the new version.
 
-1.2.0-dev
+1.2.0
 -----------------
 + Enable pure python fallback so package can be installed on all systems.
 + Updated the documentation to reflect changes in speed because of the upstream
