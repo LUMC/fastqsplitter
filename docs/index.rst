@@ -16,15 +16,31 @@ Introduction
 A simple application to split FASTQ files.
 
 The algorithm is a reimplementation from `biopet-fastqsplitter
-<https://github.com/biopet/fastqsplitter>`_. Fastqsplitter reads a fastq
-file. It then splits the reads over the designated output files.
+<https://github.com/biopet/fastqsplitter>`_. Fastqsplitter splits a fastq file
+over the specified output files evenly.
+Fastqsplitter will read groups of a 100 fastq files.
+For example if 3 output files are specified record 1-100 will go to file 1,
+101-200 to file 2, 201-300 to file 3 , 301-400 to file 1 again etc.
+This ensures the output fastq files are of equal size with no positional bias
+in the output files.
 
-This application does NOT work with multiline fastq sequences.
+Fastqsplitter is fast because it assumes each record is 4 lines. As a
+consequence this application does NOT work with multiline fastq sequences.
+Also input fastq records are NOT checked for being proper fastq records.
+Since all downstream analysis tools (FastQC, cutadapt, BWA etc.) do check
+if the input is correct, another input check in fastqsplitter was deemed
+redundant.
 
 fastqsplitter uses the excellent `xopen library by @marcelm
 <https://github.com/marcelm/xopen>`_. This determines by extension whether the
 file is compressed and allows for very fast compression and decompression of
 gzip files.
+
+Fastqsplitter has cythonized the files splitting algorithm which provides a
+speedup over the pure python implementation, especially when splitting to and
+from uncompressed fastq files. A python fallback is always available and
+fastqsplitter will default to it when the cython extension
+cannot be build or downloaded during the installation.
 
 
 =============
@@ -67,6 +83,7 @@ Biopet-fastqsplitter has only one mode: compression level 5, and an unknown numb
 of threads per file.
 
 Fastqsplitter runs with 1 thread per output file and compression level 1 by default.
+A comparison between default cython mode and python mode is in the table.
 For fair comparison with biopet-fastqsplitter, fastqsplitter was run with 4
 threads per file (xopen default) and compression level 5. Since fastqsplitter
 starts several pigz and one gzip process the memory usage of these processes
@@ -76,18 +93,43 @@ This test case was run with  a 2.3 GB input fastq file zipped.
 This was split over 5 output files.
 
 The used test machine had 32 GB memory (2x16GB 2133mhz), an Intel core i7-6700
-(4 cores, 8 threads) and a Sandisk X400 500gb SSD.
+(4 cores, 8 threads) and a Sandisk X400 500gb SSD. Operating system: Debian 10.
 
-======================== ========================== ========================= =======================
-measurement              fastqsplitter (defaults)   fastqsplitter -t 4 -c 5    biopet-fastqsplitter
-======================== ========================== ========================= =======================
-real time                 0m50.932s                  1m28.153s                 1m41.385s             
-total cpu time            3m7.116s                   7m55.436s                 8m20.304s             
-max mem                   24 MB                      32MB                      400MB                 
-max vmem                  110 MB                     1.6 GB                    11.0 GB               
-output files total size   2290 MB                    2025 MB                   2025 MB               
-======================== ========================== ========================= =======================
+The following table shows the average over 10 runs.
 
-The outcomes for multiple runs were fairly consistent with a max +-3 second difference between runs.
++ real time = wall clock time
++ user time = total cpu seconds spent by the application (useful to see the resource usage of multithreading)
++ sys time = total cpu seconds spent by the kernel (for IO and other sys calls)
+
+======================== ========================== ========================== ========================= =======================
+measurement              fastqsplitter (defaults)   fastqsplitter (python)     fastqsplitter -t 4 -c 5    biopet-fastqsplitter
+======================== ========================== ========================== ========================= =======================
+real time                 44.787s                    45.702s                   77.778s                   102.300s
+user time                 162.272s                   169.238s                  459.051s                  509.594s
+sys time                  9.825s                     9.825s                    11.078s                   8.411s
+max mem                   24 MB                      24 MB                     42 MB                     665 MB
+max vmem                  207 MB                     207 MB                    2.0 GB                    11.0 GB
+output files total size   2290 MB                    2290 MB                   2025 MB                   2025 MB
+======================== ========================== ========================== ========================= =======================
+
+The outcomes for the runs were fairly consistent with a +-3 second real time (wall clock) difference between runs.
+
+Uncompressed
+-------------
+
+When splitting a 6.3 Gb uncompressed fastq file into 3 files which are written
+to /dev/null to eliminate I/O limitations the cython algorithm generates less
+overhead than the python algorithm.
+
+However in most cases files will be split from compressed to compressed files
+making the difference much smaller (see table above.)
+
+======================== ========================== ==========================
+measurement              fastqsplitter (cython)     fastqsplitter (python)
+======================== ========================== ==========================
+real time                 6.045s                    10.345s
+user time                 4.907s                    9.200s
+sys time                  1.137s                    1.145s
+======================== ========================== ==========================
 
 .. include:: CHANGELOG.rst
