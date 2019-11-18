@@ -40,7 +40,7 @@ def modules():
 
 setup(
     name="fastqsplitter",
-    version="1.2.0",
+    version="1.3.0-dev",
     description="Splits FASTQ files evenly.",
     author="Leiden University Medical Center",
     author_email="sasc@lumc.nl",  # A placeholder for now
