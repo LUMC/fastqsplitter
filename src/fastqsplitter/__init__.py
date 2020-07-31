@@ -43,6 +43,7 @@ from .split_py import filesplitter as py_splitter
 # Choose 1 as default compression level. Speed is more important than filesize
 # in this application.
 DEFAULT_COMPRESSION_LEVEL = 1
+DEFAULT_BUFFER_SIZE = 64 * 1024
 # There is no noticable difference in CPU time between 100 and 1000 group size.
 DEFAULT_GROUP_SIZE = 100
 # With one thread per file (pigz -p 1) pigz uses way less virtual memory
@@ -88,6 +89,9 @@ def argument_parser() -> argparse.ArgumentParser:
                         #      "fine-grained the fastq distribution will be."
                         #      " Default: {0}".format(DEFAULT_GROUP_SIZE)
                         )
+    parser.add_argument("-b", "--buffer-size", type=int,
+                        default=DEFAULT_BUFFER_SIZE,
+                        help=argparse.SUPPRESS)
 
     cython_not_available_text = (
         " WARNING: the cython version of the splitting algorithm was not "
@@ -116,6 +120,7 @@ def argument_parser() -> argparse.ArgumentParser:
 def split_fastqs(input_file: Path, output_files: List[Path],
                  compression_level: int = DEFAULT_COMPRESSION_LEVEL,
                  group_size: int = DEFAULT_GROUP_SIZE,
+                 buffer_size: int = DEFAULT_BUFFER_SIZE,
                  threads_per_file: int = DEFAULT_THREADS_PER_FILE,
                  use_cython: bool = CYTHON_AVAILABLE):
     # contextlib.Exitstack allows us to open multiple files at once which
@@ -151,7 +156,7 @@ def split_fastqs(input_file: Path, output_files: List[Path],
         else:  # Use python fallback
             py_splitter(input_handle=input_fastq,
                         output_handles=output_handles,
-                        lines_per_block=group_size * 4
+                        buffer_size=buffer_size
                         # 4 lines per fastq record
                         )
 
