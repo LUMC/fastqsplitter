@@ -18,14 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import gzip
+import xopen
 import sys
 import tempfile
 from pathlib import Path
 
 from Bio.SeqIO.QualityIO import FastqPhredIterator
 
-from fastqsplitter import main, split_fastqs
+from fastqsplitter import DEFAULT_BUFFER_SIZE, DEFAULT_GROUP_SIZE, main, split_fastqs
 
 import pytest
 
@@ -40,7 +40,7 @@ def validate_fastq_gz(fastq: Path) -> int:
     and outputs the number of fastqrecords."""
 
     number_of_records = 0
-    with gzip.open(str(fastq), 'rt') as fastq_handle:
+    with xopen.xopen(str(fastq), 'rt') as fastq_handle:
         fastq_iterator = FastqPhredIterator(fastq_handle)
         for _ in fastq_iterator:
             number_of_records += 1
@@ -57,14 +57,12 @@ def test_invalid_test_file():
     error.match("Lengths of sequence and quality values differs")
 
 
-@pytest.mark.parametrize("use_cython,number_of_splits",
-                         [(True, i) for i in range(1, 6)] +
-                         [(False, i) for i in range(1, 6)])
-def test_split_fastqs(use_cython, number_of_splits: int):
+@pytest.mark.parametrize("number_of_splits", list(range(1, 6)))
+def test_split_fastqs_perline_cython(number_of_splits: int):
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq.gz")[1]))
                     for _ in range(number_of_splits)]
     print(output_files)
-    split_fastqs(TEST_FILE, output_files, use_cython=use_cython)
+    split_fastqs(TEST_FILE, output_files, use_cython=True)
     # 100 because that is the default group size.
     expected_records_per_file = (RECORDS_IN_TEST_FILE //
                                  (number_of_splits * 100)) * 100
@@ -76,6 +74,27 @@ def test_split_fastqs(use_cython, number_of_splits: int):
         assert number >= expected_records_per_file
         assert number <= (expected_records_per_file + 100)
         total_lines += number
+    assert total_lines == RECORDS_IN_TEST_FILE
+
+
+@pytest.mark.parametrize("number_of_splits", list(range(1, 6)))
+def test_split_fastqs_perblock(number_of_splits: int):
+    output_files = [Path(str(tempfile.mkstemp(suffix=".fq")[1]))
+                    for _ in range(number_of_splits)]
+    print(output_files)
+    split_fastqs(TEST_FILE, output_files, use_cython=False)
+    # 100 because that is the default group size.
+    expected_file_size = (TEST_FILE.stat().st_size // DEFAULT_BUFFER_SIZE) * DEFAULT_BUFFER_SIZE
+    print(expected_file_size)
+
+    for output_file in output_files:
+        actual_size = output_file.stat().st_size
+        print(output_file.name, actual_size)
+        assert actual_size >= expected_file_size
+        assert actual_size <= expected_file_size + DEFAULT_BUFFER_SIZE
+
+    total_lines = sum(validate_fastq_gz(output_file)
+                      for output_file in output_files)
     assert total_lines == RECORDS_IN_TEST_FILE
 
 
