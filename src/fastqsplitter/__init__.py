@@ -122,8 +122,15 @@ def split_fastqs(input_file: Path, output_files: List[Path],
     # are automatically closed on error.
     # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
     with contextlib.ExitStack() as stack:
-        input_fastq = stack.enter_context(
-            xopen.xopen(input_file, mode='rb'))  # type: io.BufferedReader
+        input_file = stack.enter_context(
+            xopen.xopen(input_file, mode='rb'))
+        # xopen implements __next__ by doing next(self._file). As __iter__
+        # it returns itself.
+        # However using self._file as iterator is much faster.
+        if isinstance(input_file, xopen.PipedGzipReader):
+            input_fastq = input_file._file
+        else:
+            input_fastq = input_file
         output_handles = [
             stack.enter_context(xopen.xopen(
                 filename=output_file,
