@@ -26,42 +26,37 @@ from typing import List
 
 def filesplitter(input_handle: io.BufferedReader,
                  output_handles: List[io.BufferedWriter],
-                 lines_per_block=100):
+                 lines_per_record: int = 4,
+                 lines_per_block: int = 100,
+                 buffer_size: int = 64 * 1024):
 
     # Make sure inputs are sensible.
     if len(output_handles) < 1:
         raise ValueError("The number of output files should be at least 1.")
-    if lines_per_block < 1:
-        raise ValueError("The number of lines per block should be at least 1.")
+    if lines_per_record < 1:
+        raise ValueError("The number of lines per record should be at least 1.")
+    if buffer_size < 1:
+        raise ValueError("The buffer size should be at least 1.")
 
     group_number = 0
     number_of_output_files = len(output_handles)
-    # An input handle should be an iterable, but since this package uses xopen
-    # we cannot be sure.
-    fastq_iterator = iter(input_handle)
-    # Alias the readline method for extra speed.
-    # next(handle) equals handle.readline() but throws a
-    # StopIteration error if the lines is ''.
-    readline = fastq_iterator.__next__
-    not_at_end_of_file = True
+    old_read_buffer = b""
+    while True:
+        new_reads = input_handle.read1(buffer_size)
+        read_buffer = old_read_buffer + new_reads
 
-    while not_at_end_of_file:
-        block = []
-        # This is the fastest way to read blocks of lines in pure python.
-        # The method used in split_cy is slower in pure python because it
-        # stores the counting integer as a PyObject.
-        for j in range(lines_per_block):
-            try:
-                block.append(readline())
-            # Readline should throw a StopIteration at EOF
-            except StopIteration:
-                not_at_end_of_file = False
-                break
+        if new_reads == b"":
+            output_handles[group_number].write(read_buffer)
+            return
 
-        # Select the output handle and write the block to it.
-        output_handles[group_number].write(b"".join(block))
-
+        newline_count = read_buffer.count(b'\n')
+        end_newline = read_buffer.rfind(b'\n')
+        overshoot_newlines = newline_count % lines_per_record
+        for i in range(overshoot_newlines):
+            end_newline = read_buffer.rfind(b'\n', 0, end_newline)
+        output_handles[group_number].write(read_buffer[:end_newline + 1])
         # Set the group number for the next group to be written.
         group_number += 1
         if group_number == number_of_output_files:
             group_number = 0
+        old_read_buffer = read_buffer[end_newline + 1:]
