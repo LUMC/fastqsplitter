@@ -44,7 +44,6 @@ def filesplitter(input_handle: io.BufferedReader,
         read_buffer = input_handle.read(buffer_size)
 
         if read_buffer == b"":
-            output_handles[group_number].write(read_buffer)
             return
 
         newline_count = read_buffer.count(b'\n')
