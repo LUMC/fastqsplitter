@@ -29,43 +29,38 @@ from typing import List
 
 def filesplitter(input_handle: io.BufferedReader,
                  output_handles: List[io.BufferedWriter],
-                 lines_per_block=100):
+                 lines_per_record: int = 4,
+                 buffer_size: int = 64 * 1024):
+
     # Make sure inputs are sensible.
     if len(output_handles) < 1:
         raise ValueError("The number of output files should be at least 1.")
-    if lines_per_block < 1:
-        raise ValueError("The number of lines per block should be at least 1.")
+    if lines_per_record < 1:
+        raise ValueError("The number of lines per record should be at least 1."
+                         )
+    if buffer_size < 1024:
+        raise ValueError("The buffer size should be at least 1024.")
 
-    # cdef bytes line  # Faster to not type.
-    block = []
-    cdef unsigned int blocksize = lines_per_block
-    cdef unsigned int i = 0
-    cdef unsigned int group_no = 0
-    cdef unsigned int number_of_output_files = len(output_handles)
+    group_number = 0
+    number_of_output_files = len(output_handles)
 
-    # for line in handle is the fastest way to read lines in python that I
-    # know of. Implementations with next(handle) or handle.readline are
-    # slower.
-    for line in input_handle:
-        block.append(line)
-        i += 1
-        if i == blocksize:
-            output_handles[group_no].write(b"".join(block))
-            block = []  # reset block.
-            group_no += 1
-            if group_no == number_of_output_files:  # See below for rationale.
-                group_no = 0
-            i = 0
-        # This works, if blocksize == 100. Then i will be [0, 1, 2, .., 98, 99]
-        # which is exactly 100 numbers.
+    while True:
+        read_buffer = input_handle.read(buffer_size)
+        if read_buffer == b"":
+            return
 
-    # Write remainder to file. Since stuff is only written at i == blocksize
-    # there is a remainder that needs to be written.
-    output_handles[group_no].write(b"".join(block))
+        newline_count = read_buffer.count(b'\n')
 
-    # The resetting of i at blocksize accomplishes two things:
-    # 1. It will never be larger than blocksize. We do not have to keep
-    # counting to infinity, which will lead to an integer overflow.
-    # 2. We do not have to use modulo (i % blocksize) == 0 to determine
-    # whether the blocksize is reached. Direct comparison is faster than
-    # modulo.
+        # The chances are paramount that our buffer does not end with \n.
+        # The buffer almost always ends  with an incomplete record. Therefore
+        # we read all the missing lines. Please note that if
+        # newline_count % lines_per_record == 0. That probably means we still
+        # have a start of a record after the last \n.
+        extra_newlines = lines_per_record - newline_count % lines_per_record
+        completed_record = b"".join(input_handle.readline()
+                                    for _ in range(extra_newlines))
+        output_handles[group_number].write(read_buffer + completed_record)
+        # Set the group number for the next group to be written.
+        group_number += 1
+        if group_number == number_of_output_files:
+            group_number = 0

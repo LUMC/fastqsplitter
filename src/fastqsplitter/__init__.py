@@ -148,7 +148,8 @@ def split_fastqs(input_file: Path, output_files: List[Path],
             if CYTHON_AVAILABLE:
                 cy_splitter(input_handle=input_fastq,
                             output_handles=output_handles,
-                            lines_per_block=group_size * 4
+                            buffer_size=buffer_size,
+                            lines_per_record=4
                             # 4 lines per fastq record
                             )
             else:
@@ -156,7 +157,8 @@ def split_fastqs(input_file: Path, output_files: List[Path],
         else:  # Use python fallback
             py_splitter(input_handle=input_fastq,
                         output_handles=output_handles,
-                        buffer_size=buffer_size
+                        buffer_size=buffer_size,
+                        lines_per_record=4
                         # 4 lines per fastq record
                         )
 
