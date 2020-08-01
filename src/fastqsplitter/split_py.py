@@ -39,23 +39,20 @@ def filesplitter(input_handle: io.BufferedReader,
 
     group_number = 0
     number_of_output_files = len(output_handles)
-    old_read_buffer = b""
-    while True:
-        new_reads = input_handle.read(buffer_size)
-        read_buffer = old_read_buffer + new_reads
 
-        if new_reads == b"":
+    while True:
+        read_buffer = input_handle.read(buffer_size)
+
+        if read_buffer == b"":
             output_handles[group_number].write(read_buffer)
             return
 
         newline_count = read_buffer.count(b'\n')
-        end_newline = read_buffer.rfind(b'\n')
         overshoot_newlines = newline_count % lines_per_record
-        for i in range(overshoot_newlines):
-            end_newline = read_buffer.rfind(b'\n', 0, end_newline)
-        output_handles[group_number].write(read_buffer[:end_newline + 1])
+        extra_newlines = lines_per_record - overshoot_newlines
+        completed_record = b"".join(input_handle.readline() for _ in range(extra_newlines))
+        output_handles[group_number].write(read_buffer + completed_record)
         # Set the group number for the next group to be written.
         group_number += 1
         if group_number == number_of_output_files:
             group_number = 0
-        old_read_buffer = read_buffer[end_newline + 1:]
