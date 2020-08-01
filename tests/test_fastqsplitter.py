@@ -18,17 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import xopen
 import sys
 import tempfile
 from pathlib import Path
 
 from Bio.SeqIO.QualityIO import FastqPhredIterator
 
-from fastqsplitter import DEFAULT_BUFFER_SIZE, DEFAULT_GROUP_SIZE, main, split_fastqs
+from fastqsplitter import main, split_fastqs
 
 import pytest
 
+import xopen
 
 TEST_FILE = Path(__file__).parent / Path("data") / Path("test.fq.gz")
 TEST_FILE_INVALID = Path(__file__).parent / Path("data") / Path(
@@ -82,8 +82,9 @@ def test_split_fastqs_perblock(number_of_splits: int):
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq")[1]))
                     for _ in range(number_of_splits)]
     print(output_files)
-    buffer_size = 1024 # Use a small buffer size for testing a small file.
-    split_fastqs(TEST_FILE, output_files, use_cython=False, buffer_size=buffer_size)
+    buffer_size = 1024  # Use a small buffer size for testing a small file.
+    split_fastqs(TEST_FILE, output_files, use_cython=False,
+                 buffer_size=buffer_size)
 
     # Use uncompressed file size here.
     expected_file_size = 258935 // number_of_splits
