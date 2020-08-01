@@ -27,7 +27,6 @@ from typing import List
 def filesplitter(input_handle: io.BufferedReader,
                  output_handles: List[io.BufferedWriter],
                  lines_per_record: int = 4,
-                 lines_per_block: int = 100,
                  buffer_size: int = 64 * 1024):
 
     # Make sure inputs are sensible.
@@ -42,7 +41,7 @@ def filesplitter(input_handle: io.BufferedReader,
     number_of_output_files = len(output_handles)
     old_read_buffer = b""
     while True:
-        new_reads = input_handle.read1(buffer_size)
+        new_reads = input_handle.read(buffer_size)
         read_buffer = old_read_buffer + new_reads
 
         if new_reads == b"":
