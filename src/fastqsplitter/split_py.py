@@ -36,6 +36,8 @@ def filesplitter(input_handle: io.BufferedReader,
         raise ValueError("The number of lines per record should be at least 1."
                          )
     if buffer_size < 1024:
+        # This value is arbitrary, but really low values such as 5 or 30 don't
+        # make sense.
         raise ValueError("The buffer size should be at least 1024.")
 
     group_number = 0
