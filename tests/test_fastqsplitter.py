@@ -58,36 +58,16 @@ def test_invalid_test_file():
 
 
 @pytest.mark.parametrize("number_of_splits", list(range(1, 6)))
-def test_split_fastqs_perline_cython(number_of_splits: int):
-    output_files = [Path(str(tempfile.mkstemp(suffix=".fq.gz")[1]))
-                    for _ in range(number_of_splits)]
-    print(output_files)
-    split_fastqs(TEST_FILE, output_files, use_cython=True)
-    # 100 because that is the default group size.
-    expected_records_per_file = (RECORDS_IN_TEST_FILE //
-                                 (number_of_splits * 100)) * 100
-    records_per_file = [validate_fastq_gz(output_file) for
-                        output_file in output_files]
-    # Check if fastq files are evenly distributed.
-    total_lines = 0
-    for number in records_per_file:
-        assert number >= expected_records_per_file
-        assert number <= (expected_records_per_file + 100)
-        total_lines += number
-    assert total_lines == RECORDS_IN_TEST_FILE
-
-
-@pytest.mark.parametrize("number_of_splits", list(range(1, 6)))
 def test_split_fastqs_perblock(number_of_splits: int):
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq")[1]))
                     for _ in range(number_of_splits)]
-    print(output_files)
-    buffer_size = 1024  # Use a small buffer size for testing a small file.
-    split_fastqs(TEST_FILE, output_files, use_cython=False,
-                 buffer_size=buffer_size)
+    # Use a small buffer size for testing a small file.
+    split_fastqs(TEST_FILE, output_files, buffer_size=1024)
 
-    # Use uncompressed file size here.
-    expected_file_size = 258935 // number_of_splits
+    with xopen.xopen(TEST_FILE, "rb") as test_h:
+        test_filesize = len(test_h.read())
+
+    expected_file_size = test_filesize // number_of_splits
 
     for output_file in output_files:
         actual_size = output_file.stat().st_size
@@ -100,13 +80,11 @@ def test_split_fastqs_perblock(number_of_splits: int):
     assert total_lines == RECORDS_IN_TEST_FILE
 
 
-@pytest.mark.parametrize("mode", ["--cython", "--python"])
-def test_main(mode):
+def test_main():
     number_of_splits = 3
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq.gz")[1]))
                     for _ in range(number_of_splits)]
     args = ["fastqsplitter", "-i", str(TEST_FILE), "-c", "5", "-t", "2"]
-    args.append(mode)
     for output_file in output_files:
         args.append("-o")
         args.append(str(output_file))

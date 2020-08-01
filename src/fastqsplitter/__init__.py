@@ -30,22 +30,10 @@ from typing import List
 # depending on extension.
 import xopen
 
-# Import from cython if available
-try:
-    from .split_cy import filesplitter as cy_splitter
-    CYTHON_AVAILABLE = True
-except ImportError as e:
-    CYTHON_IMPORT_ERROR = e
-    CYTHON_AVAILABLE = False
-
-from .split_py import filesplitter as py_splitter
-
 # Choose 1 as default compression level. Speed is more important than filesize
 # in this application.
 DEFAULT_COMPRESSION_LEVEL = 1
 DEFAULT_BUFFER_SIZE = 64 * 1024
-# There is no noticable difference in CPU time between 100 and 1000 group size.
-DEFAULT_GROUP_SIZE = 100
 # With one thread per file (pigz -p 1) pigz uses way less virtual memory
 # (10 vs 300 MB for 4 threads) and total CPU time is also decreased.
 # Example: 2.3 gb input file file. Five output files.
@@ -82,47 +70,57 @@ def argument_parser() -> argparse.ArgumentParser:
                              "".format(DEFAULT_THREADS_PER_FILE))
 
     # BELOW ARGUMENTS ARE FOR BENCHMARKING AND TESTING PURPOSES
-    parser.add_argument("-g", "--group-size", type=int,
-                        default=DEFAULT_GROUP_SIZE,
-                        help=argparse.SUPPRESS
-                        # help="Specify the group size. This will set how "
-                        #      "fine-grained the fastq distribution will be."
-                        #      " Default: {0}".format(DEFAULT_GROUP_SIZE)
-                        )
     parser.add_argument("-b", "--buffer-size", type=int,
                         default=DEFAULT_BUFFER_SIZE,
                         help=argparse.SUPPRESS)
-
-    cython_not_available_text = (
-        " WARNING: the cython version of the splitting algorithm was not "
-        "compiled for your system. This is probably due to your system not "
-        "having a C compiler installed or no pre-built binaries being "
-        "available for your system. Using fastqsplitter in cython mode will "
-        "fail.")
-    cython_help = ("Use the cython version of the file splitting algorithm." +
-                   (" (default)" if CYTHON_AVAILABLE else
-                    cython_not_available_text))
-    python_help = ("Use the python version of the file splitting algorithm." +
-                   ("" if CYTHON_AVAILABLE else " (default)"))
-    cython_group = parser.add_mutually_exclusive_group()
-    cython_group.set_defaults(use_cython=CYTHON_AVAILABLE)
-    cython_group.add_argument("--cython",
-                              action="store_true",
-                              dest="use_cython",
-                              help=cython_help)
-    cython_group.add_argument("--python",
-                              action="store_false",
-                              dest="use_cython",
-                              help=python_help)
     return parser
+
+
+def filesplitter(input_handle: io.BufferedReader,
+                 output_handles: List[io.BufferedWriter],
+                 lines_per_record: int = 4,
+                 buffer_size: int = 64 * 1024):
+
+    # Make sure inputs are sensible.
+    if len(output_handles) < 1:
+        raise ValueError("The number of output files should be at least 1.")
+    if lines_per_record < 1:
+        raise ValueError("The number of lines per record should be at least 1."
+                         )
+    if buffer_size < 1024:
+        # This value is arbitrary, but really low values such as 5 or 30 don't
+        # make sense.
+        raise ValueError("The buffer size should be at least 1024.")
+
+    group_number = 0
+    number_of_output_files = len(output_handles)
+
+    while True:
+        read_buffer = input_handle.read(buffer_size)
+        if read_buffer == b"":
+            return
+
+        newline_count = read_buffer.count(b'\n')
+
+        # The chances are paramount that our buffer does not end with \n.
+        # The buffer almost always ends  with an incomplete record. Therefore
+        # we read all the missing lines. Please note that if
+        # newline_count % lines_per_record == 0. That probably means we still
+        # have a start of a record after the last \n.
+        extra_newlines = lines_per_record - newline_count % lines_per_record
+        completed_record = b"".join(input_handle.readline()
+                                    for _ in range(extra_newlines))
+        output_handles[group_number].write(read_buffer + completed_record)
+        # Set the group number for the next group to be written.
+        group_number += 1
+        if group_number == number_of_output_files:
+            group_number = 0
 
 
 def split_fastqs(input_file: Path, output_files: List[Path],
                  compression_level: int = DEFAULT_COMPRESSION_LEVEL,
-                 group_size: int = DEFAULT_GROUP_SIZE,
                  buffer_size: int = DEFAULT_BUFFER_SIZE,
-                 threads_per_file: int = DEFAULT_THREADS_PER_FILE,
-                 use_cython: bool = CYTHON_AVAILABLE):
+                 threads_per_file: int = DEFAULT_THREADS_PER_FILE):
     # contextlib.Exitstack allows us to open multiple files at once which
     # are automatically closed on error.
     # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
@@ -144,23 +142,11 @@ def split_fastqs(input_file: Path, output_files: List[Path],
                 threads=threads_per_file
             )) for output_file in output_files
         ]  # type: List[io.BufferedWriter]
-        if use_cython:
-            if CYTHON_AVAILABLE:
-                cy_splitter(input_handle=input_fastq,
-                            output_handles=output_handles,
-                            buffer_size=buffer_size,
-                            lines_per_record=4
-                            # 4 lines per fastq record
-                            )
-            else:
-                raise CYTHON_IMPORT_ERROR
-        else:  # Use python fallback
-            py_splitter(input_handle=input_fastq,
-                        output_handles=output_handles,
-                        buffer_size=buffer_size,
-                        lines_per_record=4
-                        # 4 lines per fastq record
-                        )
+        filesplitter(input_handle=input_fastq,
+                     output_handles=output_handles,
+                     buffer_size=buffer_size,
+                     lines_per_record=4)
+
 
 
 def main():
@@ -171,8 +157,7 @@ def main():
                  parsed_args.output,
                  compression_level=parsed_args.compression_level,
                  threads_per_file=parsed_args.threads_per_file,
-                 group_size=parsed_args.group_size,
-                 use_cython=parsed_args.use_cython)
+                 buffer_size=parsed_args.buffer_size)
 
 
 if __name__ == "__main__":
