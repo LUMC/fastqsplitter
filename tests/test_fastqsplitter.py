@@ -82,19 +82,18 @@ def test_split_fastqs_perblock(number_of_splits: int):
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq")[1]))
                     for _ in range(number_of_splits)]
     print(output_files)
-    buffer_size = 2048 # Use a small buffer size for testing a small file.
+    buffer_size = 1024 # Use a small buffer size for testing a small file.
     split_fastqs(TEST_FILE, output_files, use_cython=False, buffer_size=buffer_size)
 
     # Use uncompressed file size here.
-    expected_file_size = (258935 // (number_of_splits * buffer_size)) * buffer_size
-    print(expected_file_size)
+    expected_file_size = 258935 // number_of_splits
 
     for output_file in output_files:
         actual_size = output_file.stat().st_size
+        percentage_size = actual_size / expected_file_size
         print(output_file.name, actual_size)
-        assert actual_size >= expected_file_size
-        assert actual_size <= expected_file_size + buffer_size
-
+        assert percentage_size >= 0.98
+        assert percentage_size <= 1.02
     total_lines = sum(validate_fastq_gz(output_file)
                       for output_file in output_files)
     assert total_lines == RECORDS_IN_TEST_FILE
