@@ -33,23 +33,29 @@ def filesplitter(input_handle: io.BufferedReader,
     if len(output_handles) < 1:
         raise ValueError("The number of output files should be at least 1.")
     if lines_per_record < 1:
-        raise ValueError("The number of lines per record should be at least 1.")
-    if buffer_size < 1:
-        raise ValueError("The buffer size should be at least 1.")
+        raise ValueError("The number of lines per record should be at least 1."
+                         )
+    if buffer_size < 1024:
+        raise ValueError("The buffer size should be at least 1024.")
 
     group_number = 0
     number_of_output_files = len(output_handles)
 
     while True:
         read_buffer = input_handle.read(buffer_size)
-
         if read_buffer == b"":
             return
 
         newline_count = read_buffer.count(b'\n')
-        overshoot_newlines = newline_count % lines_per_record
-        extra_newlines = lines_per_record - overshoot_newlines
-        completed_record = b"".join(input_handle.readline() for _ in range(extra_newlines))
+
+        # The chances are paramount that our buffer does not end with \n.
+        # The buffer almost always ends  with an incomplete record. Therefore
+        # we read all the missing lines. Please note that if
+        # newline_count % lines_per_record == 0. That probably means we still
+        # have a start of a record after the last \n.
+        extra_newlines = lines_per_record - newline_count % lines_per_record
+        completed_record = b"".join(input_handle.readline()
+                                    for _ in range(extra_newlines))
         output_handles[group_number].write(read_buffer + completed_record)
         # Set the group number for the next group to be written.
         group_number += 1
