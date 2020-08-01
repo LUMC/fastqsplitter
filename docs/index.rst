@@ -15,14 +15,13 @@ Introduction
 =============
 A simple application to split FASTQ files.
 
-The algorithm is a reimplementation from `biopet-fastqsplitter
+The algorithm is inspired from `biopet-fastqsplitter
 <https://github.com/biopet/fastqsplitter>`_. Fastqsplitter splits a fastq file
 over the specified output files evenly.
-Fastqsplitter will read groups of a 100 fastq files.
-For example if 3 output files are specified record 1-100 will go to file 1,
-101-200 to file 2, 201-300 to file 3 , 301-400 to file 1 again etc.
-This ensures the output fastq files are of equal size with no positional bias
-in the output files.
+
+Fastqsplitter will read blocks of 64K (by default). It checks the number of
+newlines in a block. It then reads 1-4 lines depending on how many lines are
+needed to complete the last fastq record.
 
 Fastqsplitter is fast because it assumes each record is 4 lines. As a
 consequence this application does NOT work with multiline fastq sequences.
@@ -35,12 +34,6 @@ fastqsplitter uses the excellent `xopen library by @marcelm
 <https://github.com/marcelm/xopen>`_. This determines by extension whether the
 file is compressed and allows for very fast compression and decompression of
 gzip files.
-
-Fastqsplitter has cythonized the files splitting algorithm which provides a
-speedup over the pure python implementation, especially when splitting to and
-from uncompressed fastq files. A python fallback is always available and
-fastqsplitter will default to it when the cython extension
-cannot be build or downloaded during the installation.
 
 
 =============
@@ -65,14 +58,11 @@ Example
 With an input file ``input_fastq.gz`` of 2.3 GB.
 ``fastqsplitter -i input_fastq.gz -o split.1.fq.gz -o split.2.fq.gz -o split.3.fq.gz``
 
-Fastqsplitter will read ``input_fastq.gz``. The first 100 reads will go
-to ``split.1.fq.gz``, read 101-200 will go to ``split.2.fq.gz``, read
-201-300 will go to ``split.3.fq.gz``, read 301-400 will go to ``split.1.fq.gz``,
-etc.
+Fastqsplitter will read ``input_fastq.gz``. The first 64K will go
+to ``split.1.fq.gz``, the next 64K will go to ``split.2.fq.gz``, etc.
 
-This way the fastq reads are evenly distributed, with a difference of maximum
-100 reads between output files, and no positional bias in each output file.
-
+This way the fastq reads are evenly distributed, with no positional bias in
+each output file.
 
 =======================
 Performance comparisons
