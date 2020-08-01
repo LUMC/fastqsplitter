@@ -29,7 +29,7 @@ NO_CYTHON = bool(os.environ.get("NO_CYTHON"))
 
 setup(
     name="fastqsplitter",
-    version="1.3.0-dev",
+    version="2.0.0-dev",
     description="Splits FASTQ files evenly.",
     author="Leiden University Medical Center",
     author_email="sasc@lumc.nl",  # A placeholder for now

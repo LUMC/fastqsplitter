@@ -7,6 +7,13 @@ Changelog
 .. NOTE: This document is user facing. Please word the changes in such a way
 .. that users understand how the changes affect the new version.
 
+2.0.0-dev
+-----------------
++ The cython parts of the code have been deprecated for easier installation
+  and better platform compatibility.
++ Improved speed of the python algorithm. It is now two times faster than the
+  old python algorithm. It is also 15% faster than the cython algorithm.
+
 1.2.0
 -----------------
 + Enable pure python fallback so package can be installed on all systems.
