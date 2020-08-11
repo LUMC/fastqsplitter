@@ -23,6 +23,7 @@
 import argparse
 import contextlib
 import io
+import os
 from typing import List
 
 # xopen opens files as normal files, gzip files, bzip2 files or xz files
@@ -43,11 +44,12 @@ DEFAULT_BUFFER_SIZE = 64 * 1024
 # TT. Default compression is 1. So default threads 1 makes the most sense.
 DEFAULT_THREADS_PER_FILE = 1
 DEFAULT_SUFFIX = ".fastq.gz"
+DEFAULT_INPUT = "/dev/stdin" if os.name == "posix" else None
 
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", type=str, required=True,
+    parser.add_argument("input", type=str, default=DEFAULT_INPUT,
                         help="The fastq file to be scattered.")
     parser.add_argument("-p", "--prefix", type=str,
                         help="The prefix for the output files.")
@@ -217,13 +219,32 @@ def chunk_fastqs(input_file: str,
 
 def main():
     parser = argument_parser()
-    parsed_args = parser.parse_args()
+    args = parser.parse_args()
+    default_prefix = os.path.basename(args.input)
+    default_prefix.rstrip(".gz")
+    default_prefix.rstrip(".fastq")
+    default_prefix.rstrip(".fq")
+    prefix = args.prefix if args.prefix else default_prefix
 
-    split_fastqs(parsed_args.input,
-                 parsed_args.output,
-                 compression_level=parsed_args.compression_level,
-                 threads_per_file=parsed_args.threads_per_file,
-                 buffer_size=parsed_args.buffer_size)
+    if args.output or args.number:
+        if args.output:
+            output = args.output
+        else:
+            output = [prefix + str(i) + args.suffix for i in range(args.number)
+                      ]
+        split_fastqs(args.input,
+                     output,
+                     compression_level=args.compression_level,
+                     threads_per_file=args.threads_per_file,
+                     buffer_size=args.buffer_size)
+    else:
+        chunk_fastqs(input_file=args.input,
+                     max_size=args.max_size,
+                     prefix=prefix,
+                     suffix=args.suffix,
+                     buffer_size=args.buffer_size,
+                     compression_level=args.compression_level,
+                     threads_per_file=args.threads_per_file)
 
 
 if __name__ == "__main__":  # pragma: no cover

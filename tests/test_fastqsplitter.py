@@ -113,7 +113,7 @@ def test_main():
     number_of_splits = 3
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq.gz")[1]))
                     for _ in range(number_of_splits)]
-    args = ["fastqsplitter", "-i", str(TEST_FILE), "-c", "5", "-t", "2"]
+    args = ["fastqsplitter", str(TEST_FILE), "-c", "5", "-t", "2"]
     for output_file in output_files:
         args.append("-o")
         args.append(str(output_file))
