@@ -148,7 +148,6 @@ def split_fastqs(input_file: Path, output_files: List[Path],
                      lines_per_record=4)
 
 
-
 def main():
     parser = argument_parser()
     parsed_args = parser.parse_args()
@@ -160,5 +159,5 @@ def main():
                  buffer_size=parsed_args.buffer_size)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
