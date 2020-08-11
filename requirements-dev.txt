@@ -2,7 +2,7 @@
 -r requirements-docs.txt
 tox
 pytest
-biopython
+biopython==1.76  # Works with python 3.5
 flake8
 flake8-import-order
 mypy
