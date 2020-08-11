@@ -12,8 +12,8 @@ Changelog
 + The cython parts of the code have been deprecated for easier installation
   and better platform compatibility.
 + Improved speed of the python algorithm. It is now two times faster than the
-  old python algorithm. It is also 15% faster than the cython from v1.1.0
-  algorithm.
+  old python algorithm. It is also 15% faster than the cython algorithm from
+  v1.1.0.
 
 1.2.0
 -----------------
