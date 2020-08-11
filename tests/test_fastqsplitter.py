@@ -56,6 +56,20 @@ def test_invalid_test_file():
     error.match("Lengths of sequence and quality values differs")
 
 
+def test_split_fastq_buffer_size_to_low():
+    output_files = [Path(str(tempfile.mkstemp(suffix=".fq")[1]))
+                    for _ in range(3)]
+    with pytest.raises(ValueError) as error:
+        split_fastqs(TEST_FILE, output_files, buffer_size=512)
+    error.match("at least 1024")
+
+
+def test_split_fastq_no_output_files():
+    with pytest.raises(ValueError) as error:
+        split_fastqs(TEST_FILE, [], buffer_size=512)
+    error.match("at least 1")
+
+
 @pytest.mark.parametrize("number_of_splits", list(range(1, 6)))
 def test_split_fastqs_perblock(number_of_splits: int):
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq")[1]))
