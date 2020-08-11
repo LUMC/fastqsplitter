@@ -45,7 +45,7 @@ DEFAULT_BUFFER_SIZE = 64 * 1024
 DEFAULT_THREADS_PER_FILE = 1
 DEFAULT_SUFFIX = ".fastq.gz"
 DEFAULT_INPUT = "/dev/stdin" if os.name == "posix" else None
-
+SIZE_SUFFIXES = {"K": 1024 ** 1, "M": 1024 ** 2, "G": 1024 ** 3}
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
@@ -94,6 +94,13 @@ def argument_parser() -> argparse.ArgumentParser:
                         default=DEFAULT_BUFFER_SIZE,
                         help=argparse.SUPPRESS)
     return parser
+
+
+def human_readable_to_int(number_string: str) -> int:
+    for suffix, multiplier in SIZE_SUFFIXES.items():
+        if number_string.endswith(suffix):
+            return int(number_string.strip(suffix)) * multiplier
+    return int(number_string)
 
 
 def filesplitter(input_handle: io.BufferedReader,
@@ -220,10 +227,8 @@ def chunk_fastqs(input_file: str,
 def main():
     parser = argument_parser()
     args = parser.parse_args()
-    default_prefix = os.path.basename(args.input)
-    default_prefix.rstrip(".gz")
-    default_prefix.rstrip(".fastq")
-    default_prefix.rstrip(".fq")
+    default_prefix = os.path.basename(
+        args.input).rstrip(".gz").rstrip(".fastq").rstrip(".fq") + "."
     prefix = args.prefix if args.prefix else default_prefix
 
     if args.output or args.number:
@@ -239,7 +244,7 @@ def main():
                      buffer_size=args.buffer_size)
     else:
         chunk_fastqs(input_file=args.input,
-                     max_size=args.max_size,
+                     max_size=human_readable_to_int(args.max_size),
                      prefix=prefix,
                      suffix=args.suffix,
                      buffer_size=args.buffer_size,
