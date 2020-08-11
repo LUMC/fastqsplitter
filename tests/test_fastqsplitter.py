@@ -64,20 +64,17 @@ def test_split_fastqs_perblock(number_of_splits: int):
     # Use a small buffer size for testing a small file.
     split_fastqs(TEST_FILE, output_files, buffer_size=1024)
 
-    with xopen.xopen(TEST_FILE, "rb") as test_h:
-        test_filesize = len(test_h.read())
+    expected_number_of_records = RECORDS_IN_TEST_FILE // number_of_splits
 
-    expected_file_size = test_filesize // number_of_splits
-
+    total_records = 0
     for output_file in output_files:
-        actual_size = output_file.stat().st_size
-        percentage_size = actual_size / expected_file_size
-        print(output_file.name, actual_size)
+        actual_records = validate_fastq_gz(output_file)
+        total_records += actual_records
+        # Check if distribution is even across output files.
+        percentage_size = actual_records / expected_number_of_records
         assert percentage_size >= 0.98
         assert percentage_size <= 1.02
-    total_lines = sum(validate_fastq_gz(output_file)
-                      for output_file in output_files)
-    assert total_lines == RECORDS_IN_TEST_FILE
+    assert total_records == RECORDS_IN_TEST_FILE
 
 
 def test_main():
