@@ -109,9 +109,9 @@ def filesplitter(input_handle: io.BufferedReader,
         # we read all the missing lines. Please note that if
         # newline_count % lines_per_record == 0. That probably means we still
         # have a start of a record after the last \n.
-        extra_newlines = lines_per_record - newline_count % lines_per_record
+        missing_newlines = lines_per_record - newline_count % lines_per_record
         completed_record = b"".join(input_handle.readline()
-                                    for _ in range(extra_newlines))
+                                    for _ in range(missing_newlines))
         output_handles[group_number].write(read_buffer + completed_record)
         # Set the group number for the next group to be written.
         group_number += 1
@@ -141,6 +141,60 @@ def split_fastqs(input_file: Path, output_files: List[Path],
                      output_handles=output_handles,
                      buffer_size=buffer_size,
                      lines_per_record=4)
+
+
+def read_chunk_to_file(input_handle: io.BufferedReader,
+                       output_handle: io.BufferedReader,
+                       max_size: int,
+                       lines_per_record: int = 1,
+                       buffer_size: int = DEFAULT_BUFFER_SIZE) -> int:
+    target_size = max_size - buffer_size
+    total_size = 0
+    total_newlines = 0
+    while True:
+        read_buffer = input_handle.read(buffer_size)
+        if read_buffer == b"":
+            return total_size
+        output_handle.write(read_buffer)
+        total_newlines += read_buffer.count(b'\n')
+        total_size += buffer_size
+        if total_size > target_size:
+            # Complete the record
+            missing_newlines = (lines_per_record -
+                                total_newlines % lines_per_record)
+            completed_record = b"".join(input_handle.readline()
+                                        for _ in range(missing_newlines))
+            output_handle.write(completed_record)
+            return total_size + len(completed_record)
+
+
+def chunk_fastqs(input_file: Path,
+                 max_size: int,
+                 prefix: str = "split.",
+                 suffix: str = ".fastq.gz",
+                 buffer_size: int = DEFAULT_BUFFER_SIZE,
+                 compression_level: int = DEFAULT_COMPRESSION_LEVEL,
+                 threads_per_file: int = DEFAULT_THREADS_PER_FILE):
+    if max_size < buffer_size:
+        raise ValueError("Maximum size {0} should be larger than buffer size "
+                         "{1}.".format(max_size, buffer_size))
+
+    with xopen.xopen(input_file, mode="rb") as input_fastq:
+        group_number = 0
+        written_files: List[str] = []
+        while True:
+            if input_fastq.peek() == b"":  # Quite if there are no bytes left
+                return written_files
+            filename = prefix + str(group_number) + suffix
+            group_number += 1  # Increase group_number for the next file
+            with xopen.xopen(filename, mode="wb",
+                             compresslevel=compression_level,
+                             threads=threads_per_file) as output_fastq:
+                read_chunk_to_file(input_fastq, output_fastq,
+                                   max_size,
+                                   lines_per_record=4,
+                                   buffer_size=buffer_size)
+                written_files.append(filename)
 
 
 def main():
