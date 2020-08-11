@@ -23,7 +23,6 @@
 import argparse
 import contextlib
 import io
-from pathlib import Path
 from typing import List
 
 # xopen opens files as normal files, gzip files, bzip2 files or xz files
@@ -43,20 +42,39 @@ DEFAULT_BUFFER_SIZE = 64 * 1024
 # But this is on a 8 thread machine. When using less threads RT will go towards
 # TT. Default compression is 1. So default threads 1 makes the most sense.
 DEFAULT_THREADS_PER_FILE = 1
+DEFAULT_SUFFIX = ".fastq.gz"
 
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", type=Path, required=True,
+    parser.add_argument("-i", "--input", type=str, required=True,
                         help="The fastq file to be scattered.")
-    parser.add_argument("-o", "--output", action="append", type=Path,
-                        required=True,
-                        help="Scatter over these output files. Multiple -o "
-                             "flags can be used. The extensions determine "
-                             "which compression algorithm will be used. '.gz' "
-                             "for gzip, '.bz2' for bzip2, '.xz' for xz. Other "
-                             "extensions will use no compression."
-                        )
+    parser.add_argument("-p", "--prefix", type=str,
+                        help="The prefix for the output files.")
+    parser.add_argument("-s", "--suffix", type=str, default=DEFAULT_SUFFIX,
+                        help="The default suffix for the output files. The "
+                             "extension determines which compression is used. "
+                             "'.gz' for gzip, '.bz2' for bzip2, '.xz' for xz. "
+                             "Other extensions will use no compression.")
+    output_group = parser.add_mutually_exclusive_group(required=True)
+    output_group.add_argument("-n", "--number", type=int,
+                              help="Specify the number of output files which "
+                                   "to split over. Fastq records will be "
+                                   "distributed using a round-robin method.")
+    output_group.add_argument(
+        "-m", "--max-size", type=str,
+        help="Split the fastq files in chunks of this max size. Accepts "
+             "suffixes 'K', 'M' and 'G'. NOTE: This is the size *before* "
+             "compression (if applied). As a rule of thumb multiply by 0.38 "
+             "to get the actual filesize when using gzip compression.")
+    output_group.add_argument(
+        "-o", "--output", action="append", type=str,
+        help="Scatter over these output files. Multiple -o flags can be used. "
+             "The extensions determine which compression algorithm will be "
+             "used. '.gz' for gzip, '.bz2' for bzip2, '.xz' for xz. Other "
+             "extensions will use no compression. Fastq records will be "
+             "distributed using a round-robin method.")
+
     parser.add_argument("-c", "--compression-level", type=int,
                         default=DEFAULT_COMPRESSION_LEVEL,
                         help="Only applicable when output files have a '.gz' "
@@ -119,7 +137,7 @@ def filesplitter(input_handle: io.BufferedReader,
             group_number = 0
 
 
-def split_fastqs(input_file: Path, output_files: List[Path],
+def split_fastqs(input_file: str, output_files: List[str],
                  compression_level: int = DEFAULT_COMPRESSION_LEVEL,
                  buffer_size: int = DEFAULT_BUFFER_SIZE,
                  threads_per_file: int = DEFAULT_THREADS_PER_FILE):
@@ -168,10 +186,10 @@ def read_chunk_to_file(input_handle: io.BufferedReader,
             return total_size + len(completed_record)
 
 
-def chunk_fastqs(input_file: Path,
+def chunk_fastqs(input_file: str,
                  max_size: int,
                  prefix: str = "split.",
-                 suffix: str = ".fastq.gz",
+                 suffix: str = DEFAULT_SUFFIX,
                  buffer_size: int = DEFAULT_BUFFER_SIZE,
                  compression_level: int = DEFAULT_COMPRESSION_LEVEL,
                  threads_per_file: int = DEFAULT_THREADS_PER_FILE):
