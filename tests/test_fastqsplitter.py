@@ -24,7 +24,7 @@ from pathlib import Path
 
 from Bio.SeqIO.QualityIO import FastqPhredIterator
 
-from fastqsplitter import main, split_fastqs
+from fastqsplitter import chunk_fastqs, main, split_fastqs
 
 import pytest
 
@@ -48,6 +48,8 @@ def validate_fastq_gz(fastq: Path) -> int:
 
 # This also makes sure we have a valid test file.
 RECORDS_IN_TEST_FILE = validate_fastq_gz(TEST_FILE)
+with xopen.xopen(TEST_FILE, "rb") as fastq_handle:
+    BYTES_IN_TEST_FILE = len(fastq_handle.read())
 
 
 def test_invalid_test_file():
@@ -88,6 +90,23 @@ def test_split_fastqs_perblock(number_of_splits: int):
         assert percentage_size >= 0.98
         assert percentage_size <= 1.02
     assert total_records == RECORDS_IN_TEST_FILE
+
+
+@pytest.mark.parametrize("max_size", [16*1024, 32*1024, 64*1024, 128*1024])
+def test_fastq_split_on_size(max_size: int):
+    prefix = tempfile.mktemp()
+    buffer_size = 1024
+    expected_length = BYTES_IN_TEST_FILE // (max_size - buffer_size) + 1
+    split_files = chunk_fastqs(TEST_FILE,
+                               max_size=max_size,
+                               prefix=prefix,
+                               suffix=".fastq",
+                               buffer_size=buffer_size)
+    assert len(split_files) == expected_length
+    for file in split_files:
+        validate_fastq_gz(file)
+        assert Path(file).stat().st_size <= max_size
+        Path(file).unlink()  # cleanup
 
 
 def test_main():

@@ -158,7 +158,7 @@ def read_chunk_to_file(input_handle: io.BufferedReader,
         output_handle.write(read_buffer)
         total_newlines += read_buffer.count(b'\n')
         total_size += buffer_size
-        if total_size > target_size:
+        if total_size >= target_size:
             # Complete the record
             missing_newlines = (lines_per_record -
                                 total_newlines % lines_per_record)
@@ -183,7 +183,7 @@ def chunk_fastqs(input_file: Path,
         group_number = 0
         written_files: List[str] = []
         while True:
-            if input_fastq.peek() == b"":  # Quite if there are no bytes left
+            if input_fastq.peek(0) == b"":  # Quit if there are no bytes left
                 return written_files
             filename = prefix + str(group_number) + suffix
             group_number += 1  # Increase group_number for the next file
