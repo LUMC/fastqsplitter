@@ -30,9 +30,8 @@ import pytest
 
 import xopen
 
-TEST_FILE = Path(__file__).parent / Path("data") / Path("test.fq.gz")
-TEST_FILE_INVALID = Path(__file__).parent / Path("data") / Path(
-    "test_invalid.fq.gz")
+TEST_FILE = Path(__file__).parent / "data" / "test.fq.gz"
+TEST_FILE_INVALID = Path(__file__).parent / "data" / "test_invalid.fq.gz"
 
 
 def validate_fastq_gz(fastq: Path) -> int:
