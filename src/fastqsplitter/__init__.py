@@ -96,6 +96,8 @@ def filesplitter(input_handle: io.BufferedReader,
     number_of_output_files = len(output_handles)
 
     while True:
+        # this can also be achieved by a for loop and an iter function. Which
+        # is more concise, but less readable. It does not matter for speed.
         read_buffer = input_handle.read(buffer_size)
         if read_buffer == b"":
             return
