@@ -24,8 +24,8 @@ from pathlib import Path
 
 from Bio.SeqIO.QualityIO import FastqPhredIterator
 
-from fastqsplitter import chunk_fastqs, human_readable_to_int, \
-    main, split_fastqs
+from fastqsplitter import split_fastqs_sequentially, human_readable_to_int, \
+    main, split_fastqs_round_robin
 
 import pytest
 
@@ -75,13 +75,13 @@ def test_split_fastq_buffer_size_to_low():
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq")[1]))
                     for _ in range(3)]
     with pytest.raises(ValueError) as error:
-        split_fastqs(TEST_FILE, output_files, buffer_size=512)
+        split_fastqs_round_robin(TEST_FILE, output_files, buffer_size=512)
     error.match("at least 1024")
 
 
 def test_split_fastq_no_output_files():
     with pytest.raises(ValueError) as error:
-        split_fastqs(TEST_FILE, [], buffer_size=512)
+        split_fastqs_round_robin(TEST_FILE, [], buffer_size=512)
     error.match("at least 1")
 
 
@@ -90,7 +90,7 @@ def test_split_fastqs_perblock(number_of_splits: int):
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq")[1]))
                     for _ in range(number_of_splits)]
     # Use a small buffer size for testing a small file.
-    split_fastqs(TEST_FILE, output_files, buffer_size=1024)
+    split_fastqs_round_robin(TEST_FILE, output_files, buffer_size=1024)
 
     expected_number_of_records = RECORDS_IN_TEST_FILE // number_of_splits
 
@@ -110,11 +110,11 @@ def test_fastq_split_on_size(max_size: int):
     prefix = tempfile.mktemp()
     buffer_size = 1024
     expected_length = BYTES_IN_TEST_FILE // (max_size - buffer_size) + 1
-    split_files = chunk_fastqs(TEST_FILE,
-                               max_size=max_size,
-                               prefix=prefix,
-                               suffix=".fastq",
-                               buffer_size=buffer_size)
+    split_files = split_fastqs_sequentially(TEST_FILE,
+                                            max_size=max_size,
+                                            prefix=prefix,
+                                            suffix=".fastq",
+                                            buffer_size=buffer_size)
     assert len(split_files) == expected_length
     for file in split_files:
         validate_fastq_gz(file)

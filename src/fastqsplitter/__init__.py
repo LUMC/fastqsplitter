@@ -156,10 +156,11 @@ def filesplitter(input_handle: io.BufferedReader,
             group_number = 0
 
 
-def split_fastqs(input_file: str, output_files: List[str],
-                 compression_level: int = DEFAULT_COMPRESSION_LEVEL,
-                 buffer_size: int = DEFAULT_BUFFER_SIZE,
-                 threads_per_file: int = DEFAULT_THREADS_PER_FILE):
+def split_fastqs_round_robin(
+        input_file: str, output_files: List[str],
+        compression_level: int = DEFAULT_COMPRESSION_LEVEL,
+        buffer_size: int = DEFAULT_BUFFER_SIZE,
+        threads_per_file: int = DEFAULT_THREADS_PER_FILE):
     # contextlib.Exitstack allows us to open multiple files at once which
     # are automatically closed on error.
     # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
@@ -205,13 +206,14 @@ def read_chunk_to_file(input_handle: io.BufferedReader,
             return total_size + len(completed_record)
 
 
-def chunk_fastqs(input_file: str,
-                 max_size: int,
-                 prefix: str = "split.",
-                 suffix: str = DEFAULT_SUFFIX,
-                 buffer_size: int = DEFAULT_BUFFER_SIZE,
-                 compression_level: int = DEFAULT_COMPRESSION_LEVEL,
-                 threads_per_file: int = DEFAULT_THREADS_PER_FILE):
+def split_fastqs_sequentially(
+        input_file: str,
+        max_size: int,
+        prefix: str = "split.",
+        suffix: str = DEFAULT_SUFFIX,
+        buffer_size: int = DEFAULT_BUFFER_SIZE,
+        compression_level: int = DEFAULT_COMPRESSION_LEVEL,
+        threads_per_file: int = DEFAULT_THREADS_PER_FILE):
     if max_size < buffer_size:
         raise ValueError("Maximum size {0} should be larger than buffer size "
                          "{1}.".format(max_size, buffer_size))
@@ -252,13 +254,14 @@ def fastqsplitter(input: str,
         if max_size is None:
             raise ValueError("Maximum size should be given when using stdin "
                              "as input or not using round robin.")
-        output_files = chunk_fastqs(input_file=input,
-                                    max_size=max_size,
-                                    prefix=prefix,
-                                    suffix=suffix,
-                                    buffer_size=buffer_size,
-                                    compression_level=compression_level,
-                                    threads_per_file=threads_per_file)
+        output_files = split_fastqs_sequentially(
+            input_file=input,
+            max_size=max_size,
+            prefix=prefix,
+            suffix=suffix,
+            buffer_size=buffer_size,
+            compression_level=compression_level,
+            threads_per_file=threads_per_file)
     else:  # Use round robin
         if output:
             output_files = output
@@ -269,10 +272,10 @@ def fastqsplitter(input: str,
                 raise ValueError("Either a maximum size or a number of files "
                                  "must be defined.")
             output_files = [prefix + str(i) + suffix for i in range(number)]
-        split_fastqs(input, output_files,
-                     compression_level=compression_level,
-                     threads_per_file=threads_per_file,
-                     buffer_size=buffer_size)
+        split_fastqs_round_robin(input, output_files,
+                                 compression_level=compression_level,
+                                 threads_per_file=threads_per_file,
+                                 buffer_size=buffer_size)
     return output_files
 
 
