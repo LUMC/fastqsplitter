@@ -24,8 +24,8 @@ from pathlib import Path
 
 from Bio.SeqIO.QualityIO import FastqPhredIterator
 
-from fastqsplitter import split_fastqs_sequentially, human_readable_to_int, \
-    main, split_fastqs_round_robin
+from fastqsplitter import human_readable_to_int, main, \
+    split_fastqs_round_robin, split_fastqs_sequentially
 
 import pytest
 

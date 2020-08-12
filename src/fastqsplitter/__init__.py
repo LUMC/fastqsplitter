@@ -250,11 +250,11 @@ def fastqsplitter(input: str,
         input).rstrip(".gz").rstrip(".fastq").rstrip(".fq") + "."
     prefix = prefix if prefix is not None else default_prefix
 
-    if input == STDIN or not round_robin:
+    if not round_robin or (input == STDIN and max_size is not None):
         if max_size is None:
-            raise ValueError("Maximum size should be given when using stdin "
-                             "as input or not using round robin.")
-        output_files = split_fastqs_sequentially(
+            raise ValueError("Max size must be set when splitting files "
+                             "sequentially (not using round-robin).")
+        return split_fastqs_sequentially(
             input_file=input,
             max_size=max_size,
             prefix=prefix,
@@ -262,20 +262,25 @@ def fastqsplitter(input: str,
             buffer_size=buffer_size,
             compression_level=compression_level,
             threads_per_file=threads_per_file)
-    else:  # Use round robin
-        if output:
-            output_files = output
-        else:
-            if max_size:
-                number = os.stat(input).st_size // max_size + 1
-            elif not number:
-                raise ValueError("Either a maximum size or a number of files "
-                                 "must be defined.")
-            output_files = [prefix + str(i) + suffix for i in range(number)]
-        split_fastqs_round_robin(input, output_files,
-                                 compression_level=compression_level,
-                                 threads_per_file=threads_per_file,
-                                 buffer_size=buffer_size)
+
+    if output:
+        output_files = output
+    else:
+        if max_size is not None:
+            input_size = os.stat(input).st_size
+            if input_size == 0:
+                raise OSError("Cannot determine size of input file or "
+                              "empty input file: {0}.".format(input))
+            number = input_size // max_size + 1
+        elif not number:
+            raise ValueError("Either a maximum size or a number of files or "
+                             "a list of output files must be defined.")
+        output_files = [prefix + str(i) + suffix for i in range(number)]
+
+    split_fastqs_round_robin(input, output_files,
+                             compression_level=compression_level,
+                             threads_per_file=threads_per_file,
+                             buffer_size=buffer_size)
     return output_files
 
 
