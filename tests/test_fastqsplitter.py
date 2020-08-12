@@ -24,7 +24,8 @@ from pathlib import Path
 
 from Bio.SeqIO.QualityIO import FastqPhredIterator
 
-from fastqsplitter import chunk_fastqs, main, split_fastqs
+from fastqsplitter import chunk_fastqs, fastqsplitter, human_readable_to_int, \
+    main, split_fastqs
 
 import pytest
 
@@ -53,9 +54,21 @@ with xopen.xopen(TEST_FILE, "rb") as fastq_handle:
 
 
 def test_invalid_test_file():
+    # We need to make sure our test function indeed fails when a fastq file is
+    # invalid.
     with pytest.raises(ValueError) as error:
         validate_fastq_gz(TEST_FILE_INVALID)
     error.match("Lengths of sequence and quality values differs")
+
+
+@pytest.mark.parametrize(["input", "expected"],
+                         [("1252", 1252),
+                          ("64K", 64*1024),
+                          ("64M", 64*1024*1024),
+                          ("64G", 64*1024*1024*1024)]
+                         )
+def test_human_readable_to_int(input: str, expected: int):
+    assert human_readable_to_int(input) == expected
 
 
 def test_split_fastq_buffer_size_to_low():
