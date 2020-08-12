@@ -118,11 +118,42 @@ def human_readable_to_int(number_string: str) -> int:
     return int(number_string)
 
 
-def filesplitter(input_handle: io.BufferedReader,
-                 output_handles: List[io.BufferedWriter],
-                 lines_per_record: int = 4,
-                 buffer_size: int = 64 * 1024):
+def complete_fastq_record(input_handle: io.BufferedReader) -> bytes:
+    """
+    Reads the input handle until it has read at least one entire record or has
+    reached the EOF. This ensures the input handle is at the position of a new
+    record. Returns the bytes read until the position.
+    :param input_handle:
+    :return:
+    """
+    missing_record_lines = []
+    while True:
+        line = input_handle.readline()
+        if line == b"":  # EOF
+            return b"".join(missing_record_lines)
+        missing_record_lines.append(line)
+        # Both @ and + can occur in the quality line while they also indicate
+        # the start of the record and the middle respectively.
+        # Checks below ensure at least one complete record is returned.
+        if line.startswith(b"@"):
+            sequence_line = input_handle.readline()
+            missing_record_lines.append(sequence_line)
+            if sequence_line.strip().isalpha():  # Valid sequence line
+                plus_line = input_handle.readline()
+                missing_record_lines.append(plus_line)
+                if plus_line.startswith(b"+"):
+                    quality_line = input_handle.readline()
+                    missing_record_lines.append(quality_line)
+                    lengths_match = len(quality_line) == len(sequence_line)
+                    new_record_start = input_handle.peek(1).startswith(b"@")
+                    if lengths_match and new_record_start:
+                        return b"".join(missing_record_lines)
 
+
+def round_robin_splitter(input_handle: io.BufferedReader,
+                         output_handles: List[io.BufferedWriter],
+                         buffer_size: int = 64 * 1024):
+    lines_per_record: int = 4
     # Make sure inputs are sensible.
     if len(output_handles) < 1:
         raise ValueError("The number of output files should be at least 1.")
@@ -144,16 +175,8 @@ def filesplitter(input_handle: io.BufferedReader,
         if read_buffer == b"":
             return
 
-        newline_count = read_buffer.count(b'\n')
-
-        # The chances are paramount that our buffer does not end with \n.
-        # The buffer almost always ends  with an incomplete record. Therefore
-        # we read all the missing lines. Please note that if
-        # newline_count % lines_per_record == 0. That probably means we still
-        # have a start of a record after the last \n.
-        missing_newlines = lines_per_record - newline_count % lines_per_record
-        completed_record = b"".join(input_handle.readline()
-                                    for _ in range(missing_newlines))
+        # Read the input before until the start of a new record.
+        completed_record = complete_fastq_record(input_handle)
         output_handles[group_number].write(read_buffer + completed_record)
         # Set the group number for the next group to be written.
         group_number += 1
@@ -180,33 +203,27 @@ def split_fastqs_round_robin(
                 threads=threads_per_file
             )) for output_file in output_files
         ]  # type: List[io.BufferedWriter]
-        filesplitter(input_handle=input_fastq,
-                     output_handles=output_handles,
-                     buffer_size=buffer_size,
-                     lines_per_record=4)
+        round_robin_splitter(input_handle=input_fastq,
+                             output_handles=output_handles,
+                             buffer_size=buffer_size)
 
 
-def read_chunk_to_file(input_handle: io.BufferedReader,
-                       output_handle: io.BufferedReader,
-                       max_size: int,
-                       lines_per_record: int = 1,
-                       buffer_size: int = DEFAULT_BUFFER_SIZE) -> int:
+def sequential_splitter(input_handle: io.BufferedReader,
+                        output_handle: io.BufferedReader,
+                        max_size: int,
+                        lines_per_record: int = 1,
+                        buffer_size: int = DEFAULT_BUFFER_SIZE) -> int:
     target_size = max_size - buffer_size
     total_size = 0
-    total_newlines = 0
     while True:
         read_buffer = input_handle.read(buffer_size)
         if read_buffer == b"":
             return total_size
         output_handle.write(read_buffer)
-        total_newlines += read_buffer.count(b'\n')
         total_size += buffer_size
         if total_size >= target_size:
             # Complete the record
-            missing_newlines = (lines_per_record -
-                                total_newlines % lines_per_record)
-            completed_record = b"".join(input_handle.readline()
-                                        for _ in range(missing_newlines))
+            completed_record = complete_fastq_record(input_handle)
             output_handle.write(completed_record)
             return total_size + len(completed_record)
 
@@ -234,10 +251,10 @@ def split_fastqs_sequentially(
             with xopen.xopen(filename, mode="wb",
                              compresslevel=compression_level,
                              threads=threads_per_file) as output_fastq:
-                read_chunk_to_file(input_fastq, output_fastq,
-                                   max_size,
-                                   lines_per_record=4,
-                                   buffer_size=buffer_size)
+                sequential_splitter(input_fastq, output_fastq,
+                                    max_size,
+                                    lines_per_record=4,
+                                    buffer_size=buffer_size)
                 written_files.append(filename)
 
 

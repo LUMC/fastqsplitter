@@ -112,7 +112,12 @@ def test_split_fastqs_round_robin(number_of_splits: int):
 def test_split_fastqs_sequentially(max_size: int):
     prefix = tempfile.mktemp()
     buffer_size = 1024
-    expected_length = BYTES_IN_TEST_FILE // (max_size - buffer_size) + 1
+    # The buffer = 1024. The target size is max_size - buffer size, and the
+    # record is completed after that.
+    # Record size is approx 256 characters per record.
+    # So we expect 256 x 1.5 = 384 characters to be read on our record
+    # completion on average.
+    expected_length = BYTES_IN_TEST_FILE // (max_size - buffer_size + 384) + 1
     split_files = split_fastqs_sequentially(TEST_FILE,
                                             max_size=max_size,
                                             prefix=prefix,
@@ -179,7 +184,7 @@ def test_fastqsplitter_max_size_sequentially():
     output_files = fastqsplitter(TEST_FILE, max_size=max_size, prefix=prefix,
                                  suffix=".fastq", buffer_size=buffer_size,
                                  round_robin=False)
-    expected_number = BYTES_IN_TEST_FILE // min_size + 1
+    expected_number = BYTES_IN_TEST_FILE // max_size + 1
     assert len(output_files) == expected_number
     for output_file in output_files[:-1]:  # Last file will be different
         validate_fastq_gz(output_file)
