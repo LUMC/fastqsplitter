@@ -252,7 +252,7 @@ def fastqsplitter(input: str,
 
     if not round_robin or (input == STDIN and max_size is not None):
         if max_size is None:
-            raise ValueError("Max size must be set when splitting files "
+            raise ValueError("Maximum size must be set when splitting files "
                              "sequentially (not using round-robin).")
         return split_fastqs_sequentially(
             input_file=input,

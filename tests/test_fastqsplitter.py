@@ -188,6 +188,26 @@ def test_fastqsplitter_max_size_sequentially():
     validate_fastq_gz(output_files[-1])
 
 
+def test_fastqsplitter_cannot_determine_output():
+    with pytest.raises(ValueError) as error:
+        fastqsplitter(TEST_FILE)
+    error.match("Either")
+    error.match("must be defined")
+
+
+def test_fastqsplitter_error_sequential_no_max_size():
+    with pytest.raises(ValueError) as error:
+        fastqsplitter(TEST_FILE, round_robin=False)
+    error.match("Maximum size")
+
+
+def test_fastqsplitter_error_no_input_size():
+    with pytest.raises(OSError) as error:
+        fastqsplitter("/dev/urandom", max_size=64 * 1024)
+    error.match("or empty input file")
+    error.match("Cannot determine size")
+
+
 def test_main():
     number_of_splits = 3
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq.gz")[1]))
