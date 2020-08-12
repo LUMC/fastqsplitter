@@ -1,0 +1,85 @@
+# Round-robin benchmarks
+
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 4K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 4K
+  Time (mean ± σ):      2.765 s ±  0.067 s    [User: 1.894 s, System: 0.864 s]
+  Range (min … max):    2.696 s …  2.911 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 8K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 8K
+  Time (mean ± σ):      2.319 s ±  0.058 s    [User: 1.570 s, System: 0.742 s]
+  Range (min … max):    2.246 s …  2.425 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 16K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 16K
+  Time (mean ± σ):      1.974 s ±  0.046 s    [User: 1.341 s, System: 0.624 s]
+  Range (min … max):    1.919 s …  2.059 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 32K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 32K
+  Time (mean ± σ):      1.773 s ±  0.028 s    [User: 1.229 s, System: 0.540 s]
+  Range (min … max):    1.723 s …  1.813 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 64K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 64K
+  Time (mean ± σ):      1.693 s ±  0.014 s    [User: 1.170 s, System: 0.517 s]
+  Range (min … max):    1.668 s …  1.718 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 128K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 128K
+  Time (mean ± σ):      1.796 s ±  0.017 s    [User: 1.160 s, System: 0.632 s]
+  Range (min … max):    1.772 s …  1.820 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 256K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 256K
+  Time (mean ± σ):      1.854 s ±  0.010 s    [User: 1.117 s, System: 0.729 s]
+  Range (min … max):    1.837 s …  1.863 s    10 runs
+
+# Using split in round robin mode for comparison
+$ hyperfine -w 1 -r 10 'split -n r/3 big2.fastq'
+Benchmark #1: split -n r/3 big2.fastq
+  Time (mean ± σ):      1.033 s ±  0.011 s    [User: 439.8 ms, System: 591.5 ms]
+  Range (min … max):    1.014 s …  1.047 s    10 runs
+
+# Sequential benchmarks
+
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 4K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 4K
+  Time (mean ± σ):      2.235 s ±  0.052 s    [User: 1.516 s, System: 0.713 s]
+  Range (min … max):    2.172 s …  2.323 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 8K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 8K
+  Time (mean ± σ):      1.903 s ±  0.015 s    [User: 1.277 s, System: 0.623 s]
+  Range (min … max):    1.883 s …  1.936 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 16K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 16K
+  Time (mean ± σ):      1.702 s ±  0.019 s    [User: 1.154 s, System: 0.545 s]
+  Range (min … max):    1.676 s …  1.728 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 32K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 32K
+  Time (mean ± σ):      1.620 s ±  0.026 s    [User: 1.116 s, System: 0.498 s]
+  Range (min … max):    1.591 s …  1.678 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 64K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 64K
+  Time (mean ± σ):      1.576 s ±  0.017 s    [User: 1.078 s, System: 0.494 s]
+  Range (min … max):    1.550 s …  1.606 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 128K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 128K
+  Time (mean ± σ):      1.554 s ±  0.011 s    [User: 1.057 s, System: 0.494 s]
+  Range (min … max):    1.536 s …  1.568 s    10 runs
+ 
+$ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 256K"
+Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -m 600M -k -b 256K
+  Time (mean ± σ):      1.567 s ±  0.014 s    [User: 1.073 s, System: 0.488 s]
+  Range (min … max):    1.551 s …  1.588 s    10 runs
+
+# Using split with a similar number of lines for comparison.
+$ hyperfine -w 1 -r 10 'split -l 7512140 big2.fastq'
+Benchmark #1: split -l 7512140 big2.fastq
+  Time (mean ± σ):     615.9 ms ±   6.9 ms    [User: 116.9 ms, System: 497.8 ms]
+  Range (min … max):   607.8 ms … 630.5 ms    10 runs
