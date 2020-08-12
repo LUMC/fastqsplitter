@@ -100,9 +100,52 @@ The files were stored and written on a ramdisk created with
 ``mount -t tmpfs -o size=12G myramdisk ramdisk``. This way IO was bottlenecked
 by memory bus speed instead of disk speed.
 
+Benchmarks were performed using `hyperfine
+<https://github.com/sharkdp/hyperfine>`_.
+
 Uncompressed
 -------------
+While uncompressed files are not used often in BioInformatics, they give a
+good impression of the speed of an algorithm by eliminating all the
+compression overhead. All benchmarks below split the 1.6 GB file in 3 files.
 
+Fastqsplitter round-robin mode
+
+.. code-block::
+
+    $ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -n 3"
+    Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -n 3 -b 64K
+      Time (mean ± σ):     686.7 ms ±   8.9 ms    [User: 174.9 ms, System: 508.5 ms]
+      Range (min … max):   671.0 ms … 699.2 ms    10 runs
+
+Fastqsplitter sequential mode
+
+.. code-block::
+
+    $ hyperfine -w 1 -r 10 "fastqsplitter big2.fastq -s .fastq -p test -m 600M -S"
+    Benchmark #1: fastqsplitter big2.fastq -s .fastq -p test -m 600M -S -b 64K
+      Time (mean ± σ):     559.9 ms ±   5.7 ms    [User: 57.7 ms, System: 499.4 ms]
+      Range (min … max):   550.7 ms … 570.2 ms    10 runs
+
+GNU Coreutils split can also do sequential mode and give correct FASTQ records
+when a line number is chosen that is divisable by 4. The line number 7512140
+gives also a 600M result file. So results are comparable.
+
+.. code-block::
+
+    $ hyperfine -w 1 -r 10 'split -l 7512140 big2.fastq'
+    Benchmark #1: split -l 7512140 big2.fastq
+      Time (mean ± σ):     615.9 ms ±   6.9 ms    [User: 116.9 ms, System: 497.8 ms]
+      Range (min … max):   607.8 ms … 630.5 ms    10 runs
+
+Note that system times are within 10ms of each other. This signifies the time
+needed to write the files to the tmps and to read the input. User time is
+probably closer to the time spent in the algorithm.
+
+The score is as follows:
++ Fastqsplitter round-robin: 174.9 ms user time.
++ Fastqsplitter sequential: 57.7 ms user time.
++ Gnu Coreutils split: 116.9 ms user time.
 
 Comparing different modes of fastqsplitter and biopet-fastqsplitter.
 Biopet-fastqsplitter has only one mode: compression level 5, and an unknown number
