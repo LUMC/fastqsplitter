@@ -15,19 +15,25 @@ Introduction
 =============
 A simple application to split FASTQ files.
 
-The algorithm is inspired from `biopet-fastqsplitter
-<https://github.com/biopet/fastqsplitter>`_. Fastqsplitter splits a fastq file
-over the specified output files evenly.
+Fastqsplitter splits a fastq file over the specified output files evenly.
+It is similar to the `GNU Coreutils split
+<https://manpages.debian.org/buster/coreutils/split.1.en.html>`_ program,
+except that it is aware of the FASTQ four lines per record format. (Split
+works with one line per record.) It has support for compressed FASTQ files
+and can compress splitted FASTQ files on the fly.
 
-Fastqsplitter will read blocks of 64K (by default). It checks the number of
-newlines in a block. It then reads 1-4 lines depending on how many lines are
-needed to complete the last fastq record.
+Fastqsplitter uses a round-robin method to distribute the FASTQ records evenly
+across the output files. Alternatively it can distribute files sequentially,
+which is useful for reading from STDIN and the input size is unknown.
+Fastqsplitter can split such input in N files with a given maximum size.
 
-Fastqsplitter is fast because it assumes each record is 4 lines. As a
-consequence this application does NOT work with multiline fastq sequences.
-Also input fastq records are NOT checked for being proper fastq records.
+This application does not work with multiline fastq sequences.
+
+Fastqsplitter is fast because it only checks if the last record written to a
+file is a valid FASTQ record before starting to write to a new file. It
+assumes all records before that were valid.
 Since all downstream analysis tools (FastQC, cutadapt, BWA etc.) do check
-if the input is correct, another input check in fastqsplitter was deemed
+if the input is correct, extensive input checking in fastqsplitter was deemed
 redundant.
 
 fastqsplitter uses the excellent `xopen library by @marcelm
@@ -48,25 +54,55 @@ Usage
 
 .. NOTE::
 
-   Fastqsplitter uses a separate process for reading the input file, doing the
-   splitting as well as one seperate process per output file. Fastqsplitter
-   therefore always uses multiple CPU cores.
+   Fastqsplitter uses a separate process for reading the input file if it is
+   compressed, doing the
+   splitting as well as one seperate process per compressed output file.
+   Fastqsplitter therefore always uses multiple CPU cores when working with
+   compressed files.
 
 =======
 Example
 =======
-With an input file ``input_fastq.gz`` of 2.3 GB.
-``fastqsplitter -i input_fastq.gz -o split.1.fq.gz -o split.2.fq.gz -o split.3.fq.gz``
 
-Fastqsplitter will read ``input_fastq.gz``. The first 64K will go
-to ``split.1.fq.gz``, the next 64K will go to ``split.2.fq.gz``, etc.
+Round-robin
+-----------
+With an input file ``input_fastq.gz`` of 2.3 GB.
+``fastqsplitter -i input_fastq.gz -n 3 -p split. -o .fq.qz``
+This will create ``split.0.fq.gz``, ``split.1.fq.gz`` and ``split.2.fq.gz``.
+
+Fastqsplitter will read ``input_fastq.gz``. The first block of records will go
+to ``split.0.fq.gz``, the next block will go to ``split.1.fq.gz``, etc.
 
 This way the fastq reads are evenly distributed, with no positional bias in
 each output file.
 
+Sequential
+----------
+``my_fastq_generating_program | fastqsplitter --max-size 10G -p my_fastq.
+-s .fastq.gz``
+
+This will read from STDIN and write files that contain maximum 10GiB bytes.
+Note that a ``.gz`` suffix is used. The 10GiB bytes will be compressed and the
+output sizes will be smaller than 10 GiB. An unknown number of files will
+be generated.
+
+Sequential mode can be forced with ``-S`` or ``--sequential`` flags.
+
 =======================
 Performance comparisons
 =======================
+
+Following benchmarks were performed with a 5 million record FASTQ file (1.6
+GiB) on a system with a Ryzen 5 3600 (6 core 12 threads) cpu with 32GB of
+ddr4-3200 ram.
+
+The files were stored and written on a ramdisk created with
+``mount -t tmpfs -o size=12G myramdisk ramdisk``. This way IO was bottlenecked
+by memory bus speed instead of disk speed.
+
+Uncompressed
+-------------
+
 
 Comparing different modes of fastqsplitter and biopet-fastqsplitter.
 Biopet-fastqsplitter has only one mode: compression level 5, and an unknown number

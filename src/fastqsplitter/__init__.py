@@ -92,7 +92,7 @@ def argument_parser() -> argparse.ArgumentParser:
              "to get the actual filesize when using gzip compression.")
 
     # What is a good one-letter symbol for --no-round-robin?
-    parser.add_argument("-k", "--no-round-robin", action="store_false",
+    parser.add_argument("-S", "--sequential", action="store_false",
                         dest="round_robin",
                         help="Do not use round-robin but create output files "
                              "sequentially instead. Default when using "
