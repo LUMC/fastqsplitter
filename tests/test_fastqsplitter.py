@@ -24,7 +24,7 @@ from pathlib import Path
 
 from Bio.SeqIO.QualityIO import FastqPhredIterator
 
-from fastqsplitter import chunk_fastqs, fastqsplitter, human_readable_to_int, \
+from fastqsplitter import chunk_fastqs, human_readable_to_int, \
     main, split_fastqs
 
 import pytest

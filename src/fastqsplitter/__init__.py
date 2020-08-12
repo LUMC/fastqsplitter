@@ -249,6 +249,9 @@ def fastqsplitter(input: str,
     prefix = prefix if prefix is not None else default_prefix
 
     if input == STDIN or not round_robin:
+        if max_size is None:
+            raise ValueError("Maximum size should be given when using stdin "
+                             "as input or not using round robin.")
         output_files = chunk_fastqs(input_file=input,
                                     max_size=max_size,
                                     prefix=prefix,
@@ -283,8 +286,8 @@ def main():
     buffer_size = human_readable_to_int(kwargs.pop("buffer_size"))
     print_to_stdout = kwargs.pop("print")
     # kwargs correspond to fastqsplitter function inputs.
-    output_files = fastqsplitter(max_size = max_size,
-                                 buffer_size = buffer_size,
+    output_files = fastqsplitter(max_size=max_size,
+                                 buffer_size=buffer_size,
                                  **kwargs)
     if print_to_stdout:
         print("\n".join(output_files))
