@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+"""
+This fastqsplitter module provides a program to split fastq files. It
+implements two algorithms to do so, one round-robin and one sequential
+algorith.
+"""
+
 # Copyright (c) 2019 Leiden University Medical Center
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -50,6 +56,7 @@ SIZE_SUFFIXES = {"K": 1024 ** 1, "M": 1024 ** 2, "G": 1024 ** 3}
 
 
 def argument_parser() -> argparse.ArgumentParser:
+    """Argument parser for the fastqsplitter application"""
     parser = argparse.ArgumentParser()
     parser.add_argument("input", type=str, default=STDIN, nargs="?",
                         help="The fastq file to be scattered.")
@@ -113,21 +120,26 @@ def argument_parser() -> argparse.ArgumentParser:
 
 
 def human_readable_to_int(number_string: str) -> int:
+    """
+    Convert a string such as '64K' or '128M' to an integer.
+    64K == 64 * 1024. Integers without suffix are converted as is.
+    """
     for suffix, multiplier in SIZE_SUFFIXES.items():
         if number_string.endswith(suffix):
             return int(number_string.strip(suffix)) * multiplier
     return int(number_string)
 
 
-def complete_fastq_record(input_handle: io.BufferedReader) -> bytes:
+def _read_until_new_fastq_record(input_handle: io.BufferedReader) -> bytes:
     """
-    Reads the input handle until it has read at least one entire record or has
+    Reads the input handle until the start of a fastq record or has
     reached the EOF. This ensures the input handle is at the position of a new
     record. Returns the bytes read until the position.
-    :param input_handle:
-    :return:
+    :param input_handle: an io.BufferedReader or similar object.
+    :return: All bytes that have been read up to the start of the new fastq
+    record
     """
-    missing_record_lines = []
+    missing_record_lines = []  # type: List[bytes]
     while True:
         line = input_handle.readline()
         if line == b"":  # EOF
@@ -146,74 +158,76 @@ def complete_fastq_record(input_handle: io.BufferedReader) -> bytes:
                     quality_line = input_handle.readline()
                     missing_record_lines.append(quality_line)
                     lengths_match = len(quality_line) == len(sequence_line)
+                    # Peek returns a variable number of characters (but at
+                    # least 1 in the case below). So we check with startswith.
                     new_record_start = input_handle.peek(1).startswith(b"@")
                     if lengths_match and new_record_start:
                         return b"".join(missing_record_lines)
-
-
-def round_robin_splitter(input_handle: io.BufferedReader,
-                         output_handles: List[io.BufferedWriter],
-                         buffer_size: int = 64 * 1024):
-    lines_per_record: int = 4
-    # Make sure inputs are sensible.
-    if len(output_handles) < 1:
-        raise ValueError("The number of output files should be at least 1.")
-    if lines_per_record < 1:
-        raise ValueError("The number of lines per record should be at least 1."
-                         )
-    if buffer_size < 1024:
-        # This value is arbitrary, but really low values such as 5 or 30 don't
-        # make sense.
-        raise ValueError("The buffer size should be at least 1024.")
-
-    group_number = 0
-    number_of_output_files = len(output_handles)
-
-    while True:
-        # this can also be achieved by a for loop and an iter function. Which
-        # is more concise, but less readable. It does not matter for speed.
-        read_buffer = input_handle.read(buffer_size)
-        if read_buffer == b"":
-            return
-
-        # Read the input before until the start of a new record.
-        completed_record = complete_fastq_record(input_handle)
-        output_handles[group_number].write(read_buffer + completed_record)
-        # Set the group number for the next group to be written.
-        group_number += 1
-        if group_number == number_of_output_files:
-            group_number = 0
 
 
 def split_fastqs_round_robin(
         input_file: str, output_files: List[str],
         compression_level: int = DEFAULT_COMPRESSION_LEVEL,
         buffer_size: int = DEFAULT_BUFFER_SIZE,
-        threads_per_file: int = DEFAULT_THREADS_PER_FILE):
+        threads_per_file: int = DEFAULT_THREADS_PER_FILE) -> None:
+    """
+    Split a fastq file over multiple output files in a round robin fashion.
+    :param input_file: The file to be split.
+    :param output_files: The files receiving the split parts
+    :param compression_level: Which compression level to use if applicable
+    :param buffer_size: The buffer size. The granularity at which fastq records
+    are distributed.
+    :param threads_per_file: How many threads xopen should use to open the
+    file.
+    """
+    if len(output_files) < 1:
+        raise ValueError("The number of output files should be at least 1.")
+    if buffer_size < 1024:
+        # This value is arbitrary, but really low values such as 5 or 30 don't
+        # make sense.
+        raise ValueError("The buffer size should be at least 1024.")
+
     # contextlib.Exitstack allows us to open multiple files at once which
     # are automatically closed on error.
     # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
     with contextlib.ExitStack() as stack:
-        input_fastq = stack.enter_context(
-            xopen.xopen(input_file, mode='rb'))
-        output_handles = [
-            stack.enter_context(xopen.xopen(
+        input_handle = stack.enter_context(xopen.xopen(input_file, mode='rb'))
+        output_handles = [stack.enter_context(xopen.xopen(
                 filename=output_file,
                 mode='wb',
                 compresslevel=compression_level,
                 threads=threads_per_file
             )) for output_file in output_files
         ]  # type: List[io.BufferedWriter]
-        round_robin_splitter(input_handle=input_fastq,
-                             output_handles=output_handles,
-                             buffer_size=buffer_size)
+
+        group_number = 0
+        number_of_output_files = len(output_files)
+
+        while True:
+            read_buffer = input_handle.read(buffer_size)
+            if read_buffer == b"":
+                return
+
+            # Read the input until the start of a new record.
+            completed_record = _read_until_new_fastq_record(input_handle)
+            output_handles[group_number].write(read_buffer + completed_record)
+            # Set the group number for the next group to be written.
+            group_number += 1
+            # cycle back to the start when we have written the last file.
+            if group_number == number_of_output_files:
+                group_number = 0
 
 
-def sequential_splitter(input_handle: io.BufferedReader,
-                        output_handle: io.BufferedReader,
-                        max_size: int,
-                        lines_per_record: int = 1,
-                        buffer_size: int = DEFAULT_BUFFER_SIZE) -> int:
+def _sequential_splitter(input_handle: io.BufferedReader,
+                         output_handle: io.BufferedReader,
+                         max_size: int,
+                         buffer_size: int = DEFAULT_BUFFER_SIZE) -> int:
+    """
+    Reads max_size bytes from an input_handle and writes it to output_handle
+    reading buffer_size bytes at the time. Ensures a complete fastq record
+    is at the end of each file.
+    :return: The number of bytes written.
+    """
     target_size = max_size - buffer_size
     total_size = 0
     while True:
@@ -224,7 +238,7 @@ def sequential_splitter(input_handle: io.BufferedReader,
         total_size += buffer_size
         if total_size >= target_size:
             # Complete the record
-            completed_record = complete_fastq_record(input_handle)
+            completed_record = _read_until_new_fastq_record(input_handle)
             output_handle.write(completed_record)
             return total_size + len(completed_record)
 
@@ -252,10 +266,9 @@ def split_fastqs_sequentially(
             with xopen.xopen(filename, mode="wb",
                              compresslevel=compression_level,
                              threads=threads_per_file) as output_fastq:
-                sequential_splitter(input_fastq, output_fastq,
-                                    max_size,
-                                    lines_per_record=4,
-                                    buffer_size=buffer_size)
+                _sequential_splitter(input_fastq, output_fastq,
+                                     max_size,
+                                     buffer_size=buffer_size)
                 written_files.append(filename)
 
 
@@ -269,6 +282,28 @@ def fastqsplitter(input: str,
                   compression_level: int = DEFAULT_COMPRESSION_LEVEL,
                   threads_per_file: int = DEFAULT_THREADS_PER_FILE,
                   round_robin: bool = True) -> List[str]:
+    """
+    Splits fastq files sequentially or round_robin depending on the given
+    parameters. Creates files of the from <prefix><number><suffix>.
+    :param input: The input fastq file.
+    :param output: An optional list of output files if filenames should be
+    determined before hand.
+    :param number: Optional number of output files.
+    :param max_size: Try to determine the number of output files by the size
+    of the input file and the maximum size. Or if round_robin = false this is
+    the maximum amount of bytes written.
+    :param prefix: The prefix for the output files.
+    :param suffix: The suffix for the output files. ".gz" files are gzip
+    compressed, ".xz" xz compressed and ".bzip2" bzip2 compressed.
+    :param buffer_size: The granularity with which the fastq files should be
+    distributed.
+    :param compression_level: The compression level to use, if applicable.
+    :param threads_per_file: The amount of threads xopen should use to open
+    the file.
+    :param round_robin: If set to false will force the sequential method if
+    a file is given.
+    :return: The list of output files written.
+    """
     default_prefix = os.path.basename(
         input).rstrip(".gz").rstrip(".fastq").rstrip(".fq") + "."
     prefix = prefix if prefix is not None else default_prefix
@@ -308,6 +343,7 @@ def fastqsplitter(input: str,
 
 
 def main():
+    """Fastqsplitter program"""
     parser = argument_parser()
     # convert argparse.Namespace to dictionary
     kwargs = vars(parser.parse_args())
