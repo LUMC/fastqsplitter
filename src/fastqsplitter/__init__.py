@@ -277,7 +277,9 @@ def main():
     parser = argument_parser()
     # convert argparse.Namespace to dictionary
     kwargs = vars(parser.parse_args())
-    max_size = human_readable_to_int(kwargs.pop("max_size"))
+    max_size = kwargs.pop("max_size")
+    if max_size is not None:
+        max_size = human_readable_to_int(max_size)
     buffer_size = human_readable_to_int(kwargs.pop("buffer_size"))
     print_to_stdout = kwargs.pop("print")
     # kwargs correspond to fastqsplitter function inputs.
