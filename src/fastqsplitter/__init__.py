@@ -24,7 +24,7 @@ import argparse
 import contextlib
 import io
 import os
-from typing import List
+from typing import List, Optional
 
 # xopen opens files as normal files, gzip files, bzip2 files or xz files
 # depending on extension.
@@ -44,12 +44,13 @@ DEFAULT_BUFFER_SIZE = 64 * 1024
 # TT. Default compression is 1. So default threads 1 makes the most sense.
 DEFAULT_THREADS_PER_FILE = 1
 DEFAULT_SUFFIX = ".fastq.gz"
-DEFAULT_INPUT = "/dev/stdin" if os.name == "posix" else None
+STDIN = "/dev/stdin" if os.name == "posix" else None
 SIZE_SUFFIXES = {"K": 1024 ** 1, "M": 1024 ** 2, "G": 1024 ** 3}
+
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("input", type=str, default=DEFAULT_INPUT,
+    parser.add_argument("input", type=str, default=STDIN,
                         help="The fastq file to be scattered.")
     parser.add_argument("-p", "--prefix", type=str,
                         help="The prefix for the output files.")
@@ -77,6 +78,12 @@ def argument_parser() -> argparse.ArgumentParser:
              "extensions will use no compression. Fastq records will be "
              "distributed using a round-robin method.")
 
+    # What is a good one-letter symbol for --no-round-robin?
+    parser.add_argument("-k", "--no-round-robin", action="store_false",
+                        dest="round_robin",
+                        help="Do not use round-robin but create output files "
+                             "sequentially instead. (Default when using "
+                             "stdin.)")
     parser.add_argument("-c", "--compression-level", type=int,
                         default=DEFAULT_COMPRESSION_LEVEL,
                         help="Only applicable when output files have a '.gz' "
@@ -88,10 +95,13 @@ def argument_parser() -> argparse.ArgumentParser:
                              " file. NOTE: more threads are only useful when "
                              "using a compression level > 1. Default={0}"
                              "".format(DEFAULT_THREADS_PER_FILE))
+    parser.add_argument("-P", "--print", action="store_true",
+                        help="Print output files to stdout for easier usage "
+                             "in scripts.")
 
     # BELOW ARGUMENTS ARE FOR BENCHMARKING AND TESTING PURPOSES
-    parser.add_argument("-b", "--buffer-size", type=int,
-                        default=DEFAULT_BUFFER_SIZE,
+    parser.add_argument("-b", "--buffer-size", type=str,
+                        default=str(DEFAULT_BUFFER_SIZE),
                         help=argparse.SUPPRESS)
     return parser
 
@@ -224,32 +234,58 @@ def chunk_fastqs(input_file: str,
                 written_files.append(filename)
 
 
+def fastqsplitter(input: str,
+                  output: Optional[List[str]],
+                  number: Optional[int],
+                  max_size: Optional[int],
+                  prefix: Optional[str],
+                  suffix: str = DEFAULT_SUFFIX,
+                  buffer_size: int = DEFAULT_BUFFER_SIZE,
+                  compression_level: int = DEFAULT_COMPRESSION_LEVEL,
+                  threads_per_file: int = DEFAULT_THREADS_PER_FILE,
+                  round_robin: bool = True) -> List[str]:
+    default_prefix = os.path.basename(
+        input).rstrip(".gz").rstrip(".fastq").rstrip(".fq") + "."
+    prefix = prefix if prefix is not None else default_prefix
+
+    if input == STDIN or not round_robin:
+        output_files = chunk_fastqs(input_file=input,
+                                    max_size=max_size,
+                                    prefix=prefix,
+                                    suffix=suffix,
+                                    buffer_size=buffer_size,
+                                    compression_level=compression_level,
+                                    threads_per_file=threads_per_file)
+    else:  # Use round robin
+        if output:
+            output_files = output
+        else:
+            if max_size:
+                number = os.stat(input).st_size // max_size + 1
+            elif not number:
+                raise ValueError("Either a maximum size or a number of files "
+                                 "must be defined.")
+            output_files = [prefix + str(i) + suffix for i in range(number)]
+        split_fastqs(input, output_files,
+                     compression_level=compression_level,
+                     threads_per_file=threads_per_file,
+                     buffer_size=buffer_size)
+    return output_files
+
+
 def main():
     parser = argument_parser()
-    args = parser.parse_args()
-    default_prefix = os.path.basename(
-        args.input).rstrip(".gz").rstrip(".fastq").rstrip(".fq") + "."
-    prefix = args.prefix if args.prefix else default_prefix
-
-    if args.output or args.number:
-        if args.output:
-            output = args.output
-        else:
-            output = [prefix + str(i) + args.suffix for i in range(args.number)
-                      ]
-        split_fastqs(args.input,
-                     output,
-                     compression_level=args.compression_level,
-                     threads_per_file=args.threads_per_file,
-                     buffer_size=args.buffer_size)
-    else:
-        chunk_fastqs(input_file=args.input,
-                     max_size=human_readable_to_int(args.max_size),
-                     prefix=prefix,
-                     suffix=args.suffix,
-                     buffer_size=args.buffer_size,
-                     compression_level=args.compression_level,
-                     threads_per_file=args.threads_per_file)
+    # convert argparse.Namespace to dictionary
+    kwargs = vars(parser.parse_args())
+    max_size = human_readable_to_int(kwargs.pop("max_size"))
+    buffer_size = human_readable_to_int(kwargs.pop("buffer_size"))
+    print_to_stdout = kwargs.pop("print")
+    # kwargs correspond to fastqsplitter function inputs.
+    output_files = fastqsplitter(max_size = max_size,
+                                 buffer_size = buffer_size,
+                                 **kwargs)
+    if print_to_stdout:
+        print("\n".join(output_files))
 
 
 if __name__ == "__main__":  # pragma: no cover
