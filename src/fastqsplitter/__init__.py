@@ -237,10 +237,10 @@ def split_fastqs_sequentially(
 
 
 def fastqsplitter(input: str,
-                  output: Optional[List[str]],
-                  number: Optional[int],
-                  max_size: Optional[int],
-                  prefix: Optional[str],
+                  output: Optional[List[str]] = None,
+                  number: Optional[int] = None,
+                  max_size: Optional[int] = None,
+                  prefix: Optional[str] = None,
                   suffix: str = DEFAULT_SUFFIX,
                   buffer_size: int = DEFAULT_BUFFER_SIZE,
                   compression_level: int = DEFAULT_COMPRESSION_LEVEL,

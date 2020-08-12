@@ -21,10 +21,11 @@
 import sys
 import tempfile
 from pathlib import Path
+from typing import Union
 
 from Bio.SeqIO.QualityIO import FastqPhredIterator
 
-from fastqsplitter import human_readable_to_int, main, \
+from fastqsplitter import fastqsplitter, human_readable_to_int, main, \
     split_fastqs_round_robin, split_fastqs_sequentially
 
 import pytest
@@ -35,12 +36,12 @@ TEST_FILE = Path(__file__).parent / "data" / "test.fq.gz"
 TEST_FILE_INVALID = Path(__file__).parent / "data" / "test_invalid.fq.gz"
 
 
-def validate_fastq_gz(fastq: Path) -> int:
+def validate_fastq_gz(fastq: Union[str, Path]) -> int:
     """This function uses the biopython parser to validate a fastq file
     and outputs the number of fastqrecords."""
 
     number_of_records = 0
-    with xopen.xopen(str(fastq), 'rt') as fastq_handle:
+    with xopen.xopen(fastq, 'rt') as fastq_handle:
         fastq_iterator = FastqPhredIterator(fastq_handle)
         for _ in fastq_iterator:
             number_of_records += 1
@@ -86,7 +87,7 @@ def test_split_fastq_no_output_files():
 
 
 @pytest.mark.parametrize("number_of_splits", list(range(1, 6)))
-def test_split_fastqs_perblock(number_of_splits: int):
+def test_split_fastqs_round_robin(number_of_splits: int):
     output_files = [Path(str(tempfile.mkstemp(suffix=".fq")[1]))
                     for _ in range(number_of_splits)]
     # Use a small buffer size for testing a small file.
@@ -106,7 +107,7 @@ def test_split_fastqs_perblock(number_of_splits: int):
 
 
 @pytest.mark.parametrize("max_size", [16*1024, 32*1024, 64*1024, 128*1024])
-def test_fastq_split_on_size(max_size: int):
+def test_split_fastqs_sequentially(max_size: int):
     prefix = tempfile.mktemp()
     buffer_size = 1024
     expected_length = BYTES_IN_TEST_FILE // (max_size - buffer_size) + 1
@@ -120,6 +121,71 @@ def test_fastq_split_on_size(max_size: int):
         validate_fastq_gz(file)
         assert Path(file).stat().st_size <= max_size
         Path(file).unlink()  # cleanup
+
+
+def test_fastqsplitter_number_of_files():
+    prefix = tempfile.mktemp()
+    number = 4
+    output_files = fastqsplitter(TEST_FILE, prefix=prefix, number=number,
+                                 buffer_size=1024, suffix=".fastq")
+    expected_size = BYTES_IN_TEST_FILE / number
+    assert len(output_files) == number
+    for output_file in output_files:
+        validate_fastq_gz(output_file)
+        size_percentage = Path(output_file).stat().st_size / expected_size
+        assert size_percentage >= 0.98
+        assert size_percentage <= 1.02
+
+
+def test_fastqsplitter_output_files():
+    number = 4
+    output_files = [Path(str(tempfile.mkstemp(suffix=".fq")[1]))
+                    for _ in range(number)]
+
+    expected_size = BYTES_IN_TEST_FILE / number
+    fastqsplitter(TEST_FILE, output=output_files, buffer_size=1024,
+                  suffix=".fastq")
+    for output_file in output_files:
+        validate_fastq_gz(output_file)
+        size_percentage = output_file.stat().st_size / expected_size
+        assert size_percentage >= 0.98
+        assert size_percentage <= 1.02
+        output_file.unlink()
+
+
+def test_fastqsplitter_max_size_round_robin():
+    prefix = tempfile.mktemp()
+    max_size = 64 * 1024
+    output_files = fastqsplitter(TEST_FILE, max_size=max_size, prefix=prefix,
+                                 buffer_size=1024, round_robin=True)
+    expected_number = TEST_FILE.stat().st_size // max_size + 1
+    expected_size = TEST_FILE.stat().st_size // expected_number
+    assert len(output_files) == expected_number
+    for output_file in output_files:
+        validate_fastq_gz(output_file)
+        size_percentage = Path(output_file).stat().st_size / expected_size
+        assert size_percentage >= 0.98
+        assert size_percentage <= 1.02
+        Path(output_file).unlink()
+
+
+def test_fastqsplitter_max_size_sequentially():
+    buffer_size = 1024
+    max_size = 64*1024
+    min_size = max_size - buffer_size
+    prefix = tempfile.mktemp()
+    output_files = fastqsplitter(TEST_FILE, max_size=max_size, prefix=prefix,
+                                 suffix=".fastq", buffer_size=buffer_size,
+                                 round_robin=False)
+    expected_number = BYTES_IN_TEST_FILE // min_size + 1
+    assert len(output_files) == expected_number
+    for output_file in output_files[:-1]:  # Last file will be different
+        validate_fastq_gz(output_file)
+        size = Path(output_file).stat().st_size
+        assert size >= min_size
+        assert size <= max_size
+        Path(output_file).unlink()
+    validate_fastq_gz(output_files[-1])
 
 
 def test_main():
