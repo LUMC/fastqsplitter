@@ -50,7 +50,7 @@ SIZE_SUFFIXES = {"K": 1024 ** 1, "M": 1024 ** 2, "G": 1024 ** 3}
 
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("input", type=str, default=STDIN,
+    parser.add_argument("input", type=str, default=STDIN, nargs="?",
                         help="The fastq file to be scattered.")
     parser.add_argument("-p", "--prefix", type=str,
                         help="The prefix for the output files.")
