@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -208,14 +210,31 @@ def test_fastqsplitter_error_no_input_size():
     error.match("Cannot determine size")
 
 
-def test_main():
+def test_main(capsys):
     number_of_splits = 3
-    output_files = [Path(str(tempfile.mkstemp(suffix=".fq.gz")[1]))
+    prefix = tempfile.mktemp()
+    output_files = [str(tempfile.mkstemp(suffix=".fq.gz")[1])
                     for _ in range(number_of_splits)]
-    args = ["fastqsplitter", str(TEST_FILE), "-c", "5", "-t", "2"]
+    args = ["fastqsplitter", str(TEST_FILE), "-c", "5", "-t", "2", "-P",
+            "-p", prefix]
     for output_file in output_files:
         args.append("-o")
-        args.append(str(output_file))
+        args.append(output_file)
     sys.argv = args[:]
     main()
-    [validate_fastq_gz(output_file) for output_file in output_files]
+    assert "\n".join(output_files) + "\n" == capsys.readouterr().out
+    for output_file in output_files:
+        validate_fastq_gz(output_file)
+        os.remove(output_file)
+
+
+def test_main_human_readable_conversion(capsys):
+    prefix = tempfile.mktemp()
+    sys.argv = ["fastqsplitter", str(TEST_FILE), "-m", "64K", "-P",
+                "-p", prefix]
+    main()
+    output_files = capsys.readouterr().out.split()
+    assert len(output_files) == 2
+    for output_file in output_files:
+        validate_fastq_gz(output_file)
+        os.remove(output_file)
