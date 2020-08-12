@@ -65,25 +65,30 @@ def argument_parser() -> argparse.ArgumentParser:
                                    "to split over. Fastq records will be "
                                    "distributed using a round-robin method.")
     output_group.add_argument(
-        "-m", "--max-size", type=str,
-        help="Split the fastq files in chunks of this max size. Accepts "
-             "suffixes 'K', 'M' and 'G'. NOTE: This is the size *before* "
-             "compression (if applied). As a rule of thumb multiply by 0.38 "
-             "to get the actual filesize when using gzip compression.")
-    output_group.add_argument(
         "-o", "--output", action="append", type=str,
         help="Scatter over these output files. Multiple -o flags can be used. "
              "The extensions determine which compression algorithm will be "
              "used. '.gz' for gzip, '.bz2' for bzip2, '.xz' for xz. Other "
              "extensions will use no compression. Fastq records will be "
              "distributed using a round-robin method.")
+    output_group.add_argument(
+        "-m", "--max-size", type=str,
+        help="In round robin mode, determines the number of output files by "
+             "dividing the input size "
+             "by max size and distribute the fastq records in a round robin "
+             "fashion over these files. WARNING: if compression differs "
+             "between input and output files, this will not work properly. "
+             "In sequential mode this is the maximum number of bytes written "
+             "to each output file. NOTE: This is the size *before* "
+             "compression (if applied). As a rule of thumb multiply by 0.38 "
+             "to get the actual filesize when using gzip compression.")
 
     # What is a good one-letter symbol for --no-round-robin?
     parser.add_argument("-k", "--no-round-robin", action="store_false",
                         dest="round_robin",
                         help="Do not use round-robin but create output files "
-                             "sequentially instead. (Default when using "
-                             "stdin.)")
+                             "sequentially instead. Default when using "
+                             "stdin. Max size should be set.")
     parser.add_argument("-c", "--compression-level", type=int,
                         default=DEFAULT_COMPRESSION_LEVEL,
                         help="Only applicable when output files have a '.gz' "
