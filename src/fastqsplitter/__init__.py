@@ -33,6 +33,7 @@ import xopen
 # Choose 1 as default compression level. Speed is more important than filesize
 # in this application.
 DEFAULT_COMPRESSION_LEVEL = 1
+# 64K seems a good default. See docs/benchmark_results.txt.
 DEFAULT_BUFFER_SIZE = 64 * 1024
 # With one thread per file (pigz -p 1) pigz uses way less virtual memory
 # (10 vs 300 MB for 4 threads) and total CPU time is also decreased.
