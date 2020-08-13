@@ -154,3 +154,5 @@ Usually FASTQ files are compressed. Fastqsplitter uses xopen to call external
 programs which do the compression and decompression.
 
 TODO: When igzip is patched and xopen supports igzip.
+
+.. include:: CHANGELOG.rst
