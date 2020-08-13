@@ -9,11 +9,13 @@ Changelog
 
 2.0.0-dev
 -----------------
++ Redesigned CLI to make it much easier to use with streaming data.
++ Added an algorithm that can handle streaming data with no known input size.
++ Improved speed of the python algorithm. It is now 5 times faster than the
+  old python algorithm. It is also 3 times faster than the cython algorithm
+  from v1.2.0.
 + The cython parts of the code have been deprecated for easier installation
   and better platform compatibility.
-+ Improved speed of the python algorithm. It is now two times faster than the
-  old python algorithm. It is also 15% faster than the cython algorithm from
-  v1.1.0.
 
 1.2.0
 -----------------
