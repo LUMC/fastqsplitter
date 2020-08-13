@@ -56,8 +56,8 @@ The conda install is recommended because it will install dependencies which
 make decompression and compression faster for `.gz` files.
 
 To split an input file ``input_fastq.gz`` into 3 different files.
-``fastqsplitter -i input_fastq.gz
--o split.1.fq.gz -o split.2.fq.gz -o split.3.fq.gz``
+``fastqsplitter input.fastq.gz -n 3 --prefix split.`` 
+This will create ``split.0.fastq.gz``, ``split.1.fastq.gz`` and ``split.2.fastq.gz``.
 
 fastqsplitter uses the excellent `xopen library by @marcelm
 <https://github.com/marcelm/xopen>`_. Therefore, the input and output files
