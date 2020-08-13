@@ -253,7 +253,20 @@ def split_fastqs_sequentially(
         suffix: str = DEFAULT_SUFFIX,
         buffer_size: int = DEFAULT_BUFFER_SIZE,
         compression_level: int = DEFAULT_COMPRESSION_LEVEL,
-        threads_per_file: int = DEFAULT_THREADS_PER_FILE):
+        threads_per_file: int = DEFAULT_THREADS_PER_FILE) -> List[str]:
+    """
+    Read an input file and create a new split output file for every
+    max_size bytes read.
+    :param input_file: The input fastq
+    :param max_size: The maximum size of bytes that should be in the output
+    files.
+    :param prefix: Prefix for the output files.
+    :param suffix: Suffix for the output files.
+    :param buffer_size: How much data should be read at once.
+    :param compression_level: The compression level if a '.gz' suffix is used.
+    :param threads_per_file: The number of compressen threads per file.
+    :return: A list of written files.
+    """
     if max_size < buffer_size:
         raise ValueError("Maximum size {0} should be larger than buffer size "
                          "{1}.".format(max_size, buffer_size))
