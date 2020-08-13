@@ -261,7 +261,7 @@ def split_fastqs_sequentially(
     with xopen.xopen(input_file, mode="rb", threads=threads_per_file
                      ) as input_fastq:
         group_number = 0
-        written_files: List[str] = []
+        written_files = []  # type: List[str]
         while True:
             if input_fastq.peek(0) == b"":  # Quit if there are no bytes left
                 return written_files
