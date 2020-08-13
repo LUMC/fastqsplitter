@@ -191,7 +191,8 @@ def split_fastqs_round_robin(
     # are automatically closed on error.
     # https://stackoverflow.com/questions/19412376/open-a-list-of-files-using-with-as-context-manager
     with contextlib.ExitStack() as stack:
-        input_handle = stack.enter_context(xopen.xopen(input_file, mode='rb'))
+        input_handle = stack.enter_context(
+            xopen.xopen(input_file, mode='rb', threads=threads_per_file))
         output_handles = [stack.enter_context(xopen.xopen(
                 filename=output_file,
                 mode='wb',
@@ -255,7 +256,8 @@ def split_fastqs_sequentially(
         raise ValueError("Maximum size {0} should be larger than buffer size "
                          "{1}.".format(max_size, buffer_size))
 
-    with xopen.xopen(input_file, mode="rb") as input_fastq:
+    with xopen.xopen(input_file, mode="rb", threads=threads_per_file
+                     ) as input_fastq:
         group_number = 0
         written_files: List[str] = []
         while True:
