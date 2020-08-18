@@ -36,6 +36,15 @@ from typing import List, Optional
 # depending on extension.
 import xopen
 
+try:
+    import fcntl
+    with open("/proc/sys/fs/pipe-max-size", "rt") as handle:
+        MAX_PIPE_SIZE = int(handle.read())
+except (ImportError, FileNotFoundError):
+    fcntl = None
+    MAX_PIPE_SIZE = None
+F_SET_PIPE_SZ = 1031
+
 # Choose 1 as default compression level. Speed is more important than filesize
 # in this application.
 DEFAULT_COMPRESSION_LEVEL = 1
@@ -53,6 +62,17 @@ DEFAULT_THREADS_PER_FILE = 1
 DEFAULT_SUFFIX = ".fastq.gz"
 STDIN = "/dev/stdin" if os.name == "posix" else None
 SIZE_SUFFIXES = {"K": 1024 ** 1, "M": 1024 ** 2, "G": 1024 ** 3}
+
+
+def optimize_xopen_handle(file_handle):
+    if (isinstance(file_handle, xopen.PipedGzipReader) or
+            isinstance(file_handle, xopen.PipedGzipWriter)):
+        if fcntl:
+            # Set pipe size to max value
+            fcntl.fcntl(file_handle._file.fileno(), F_SET_PIPE_SZ,
+                        MAX_PIPE_SIZE)
+        return file_handle._file
+    return file_handle
 
 
 def argument_parser() -> argparse.ArgumentParser:
@@ -195,6 +215,7 @@ def split_fastqs_round_robin(
     with contextlib.ExitStack() as stack:
         input_handle = stack.enter_context(
             xopen.xopen(input_file, mode='rb', threads=threads_per_file))
+        input_handle = optimize_xopen_handle(input_handle)
         output_handles = [stack.enter_context(xopen.xopen(
                 filename=output_file,
                 mode='wb',
@@ -202,6 +223,8 @@ def split_fastqs_round_robin(
                 threads=threads_per_file
             )) for output_file in output_files
         ]  # type: List[io.BufferedWriter]
+        output_handles = [optimize_xopen_handle(output_handle)
+                          for output_handle in output_handles]
 
         group_number = 0
         number_of_output_files = len(output_files)
