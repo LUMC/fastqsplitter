@@ -30,6 +30,7 @@ import argparse
 import contextlib
 import io
 import os
+import sys
 from typing import List, Optional
 
 # xopen opens files as normal files, gzip files, bzip2 files or xz files
@@ -40,10 +41,14 @@ try:
     import fcntl
     with open("/proc/sys/fs/pipe-max-size", "rt") as handle:
         MAX_PIPE_SIZE: Optional[int] = int(handle.read())
+    # Python 3.10 will include F_SETPIPE_SZ parameter
+    # https://github.com/python/cpython/pull/21921
+    # Linux F_SETPIPE_SZ = 1031.
+    if not hasattr(fcntl, "F_SETPIPE_SZ") and sys.platform == "linux":
+        setattr(fcntl, "F_SETPIPE_SZ", 1031)
 except (ImportError, FileNotFoundError):
     fcntl = None  # type: ignore
     MAX_PIPE_SIZE = None  # type: ignore
-F_SET_PIPE_SZ = 1031
 
 # Choose 1 as default compression level. Speed is more important than filesize
 # in this application.
@@ -67,9 +72,9 @@ SIZE_SUFFIXES = {"K": 1024 ** 1, "M": 1024 ** 2, "G": 1024 ** 3}
 def optimize_xopen_handle(file_handle):
     if (isinstance(file_handle, xopen.PipedGzipReader) or
             isinstance(file_handle, xopen.PipedGzipWriter)):
-        if fcntl:
+        if hasattr(fcntl, "F_SETPIPE_SZ") and MAX_PIPE_SIZE:
             # Set pipe size to max value
-            fcntl.fcntl(file_handle._file.fileno(), F_SET_PIPE_SZ,
+            fcntl.fcntl(file_handle._file.fileno(), fcntl.F_SETPIPE_SZ,
                         MAX_PIPE_SIZE)
         return file_handle._file
     return file_handle
