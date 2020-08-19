@@ -138,3 +138,14 @@ $ hyperfine -w 1 -r 10 'fastqsplitter big2.fastq.gz -n 3 -p test -b 128K'
 Benchmark #1: fastqsplitter big2.fastq.gz -n 3 -p test -b 128K
   Time (mean ± σ):      8.425 s ±  0.102 s    [User: 31.747 s, System: 1.135 s]
   Range (min … max):    8.317 s …  8.601 s    10 runs
+
+# v1.2.0 benchmarks.
+$ hyperfine -w 1 -r 10 'fastqsplitter -i big2.fastq.gz -o test0.fastq.gz -o test1.fastq.gz -o test2.fastq.gz'
+Benchmark #1: fastqsplitter -i big2.fastq.gz -o test0.fastq.gz -o test1.fastq.gz -o test2.fastq.gz
+  Time (mean ± σ):     15.200 s ±  0.069 s    [User: 40.885 s, System: 1.580 s]
+  Range (min … max):   15.096 s … 15.281 s    10 runs
+
+$ hyperfine -w 1 -r 10 'fastqsplitter -i big2.fastq -o test0.fastq -o test1.fastq -o test2.fastq'
+Benchmark #1: fastqsplitter -i big2.fastq -o test0.fastq -o test1.fastq -o test2.fastq
+  Time (mean ± σ):      1.922 s ±  0.025 s    [User: 1.064 s, System: 0.856 s]
+  Range (min … max):    1.895 s …  1.979 s    10 runs
