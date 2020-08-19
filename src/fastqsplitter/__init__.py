@@ -39,10 +39,10 @@ import xopen
 try:
     import fcntl
     with open("/proc/sys/fs/pipe-max-size", "rt") as handle:
-        MAX_PIPE_SIZE = int(handle.read())
+        MAX_PIPE_SIZE: Optional[int] = int(handle.read())
 except (ImportError, FileNotFoundError):
-    fcntl = None
-    MAX_PIPE_SIZE = None
+    fcntl = None  # type: ignore
+    MAX_PIPE_SIZE = None  # type: ignore
 F_SET_PIPE_SZ = 1031
 
 # Choose 1 as default compression level. Speed is more important than filesize
